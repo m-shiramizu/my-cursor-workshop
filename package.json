@@ -1,0 +1,23 @@
+{
+  "name": "cursor-workshop-template",
+  "version": "1.0.0",
+  "description": "Cursor workshop template with Python FastAPI and modern tooling",
+  "volta": {
+    "node": "20.11.0",
+    "npm": "10.2.4"
+  },
+  "scripts": {
+    "setup": "echo 'Use uv sync for Python setup' && echo 'Node.js tools managed by Volta'",
+    "check-tools": "echo 'Volta:' && volta --version && echo 'Node:' && node --version && echo 'npm:' && npm --version"
+  },
+  "keywords": [
+    "cursor",
+    "ai",
+    "python",
+    "fastapi",
+    "workshop",
+    "volta"
+  ],
+  "author": "Cursor Workshop",
+  "license": "MIT"
+}

@@ -1,0 +1,16 @@
+{
+  "browser": {
+    "browserName": "chromium",
+    "isolated": false,
+    "launchOptions": {
+      "headless": false,
+      "channel": "chrome"
+    },
+    "contextOptions": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    }
+  }
+}

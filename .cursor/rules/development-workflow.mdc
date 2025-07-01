@@ -1,0 +1,270 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 開発フローガイドライン
+
+## 標準開発フロー
+
+このプロジェクトでは、以下の開発フローに従います：
+
+1. **要件定義の確認**
+   - docs/requirements.md などの要件を確認
+   - 不明点があれば質問
+
+2. **タスク分解**
+   - 要件を 15-30 分で完了可能なタスクに分解（2 時間のハンズオン用）
+   - 各タスクの依存関係を明確化
+   - ユーザーにタスク分解を提示
+
+3. **承認とIssue登録**
+   - ユーザーから「ok」などの承認を受けたら、自動的に次のステップへ
+   - GitHub CLI を使用して各タスクを Issue として登録
+   - 全 Issue 登録完了を報告
+
+4. **開発実施（t-wada方式TDD）**
+   - Issue ごとにブランチを作成
+   - **必ずTDDサイクルに従う**：
+     1. Red: 失敗するテストを1つ書く
+     2. Green: テストを通す最小限のコードを書く
+     3. Refactor: グリーンキープでリファクタリング
+   - 小さなコミットを頻繁に行う（各サイクルごと）
+   - 適切なコミットメッセージで記録
+
+5. **PR作成とマージ**
+   - テスト通過を確認
+   - PR を作成してレビュー依頼
+   - マージ後、次の Issue へ
+
+## 重要な原則
+
+- **Issue 駆動開発**: 必ず Issue 登録してから開発を開始
+- **承認の解釈**: 「ok」「はい」「承認」などの肯定的な返答は、次のステップへ進む承認と解釈
+- **自動化**: 承認後は自動的に適切な次のアクションを実行
+- **uv の使用**: Python パッケージ管理には必ず uv を使用（pip は使用しない）
+
+## GitHub Issue 登録時の形式
+
+改行を含む本文を登録する際は、必ず $'...' 構文を使用してください：
+
+```bash
+# 改行を含む Issue 作成（正しい例）
+gh issue create -t "タイトル" -b $'1行目\n2行目\n3行目'
+
+# 複数行の Markdown（正しい例）
+gh issue create -t "Task 1: プロジェクト基盤構築" -b $'## 概要\nFastAPIプロジェクトの初期設定\n\n## 実装内容\n- [ ] プロジェクト構造の作成\n- [ ] 依存関係の設定\n- [ ] 基本的なテスト'
+
+# 誤った例（使用しない）
+gh issue create -t "タイトル" -b "1行目
+2行目"  # 改行が正しく処理されない
+```
+
+## プルリクエスト作成時の形式
+
+PR の本文も同様に $'...' 構文を使用：
+
+```bash
+# PR作成の正しい例
+gh pr create \
+  --title "feat: 商品作成API実装" \
+  --body $'## 概要\n商品作成エンドポイントの実装\n\n## 関連Issue\nFixes #2\n\n## 変更内容\n- POST /items エンドポイント追加\n- バリデーション実装\n- テスト作成'
+```
+
+## パッケージ管理コマンド
+
+uv はプロジェクトの設定を自動的に認識し、必要な環境を構築します。
+
+```bash
+# 初回セットアップ（Python仮想環境の構築）
+uv sync
+
+# 仮想環境を有効化
+source .venv/bin/activate  # macOS/Linux
+.venv\Scripts\activate     # Windows
+
+# パッケージの追加（pyproject.toml に自動追加）
+uv add fastapi
+
+# 開発用パッケージの追加
+uv add --dev pytest
+
+# 複数パッケージの一括追加
+uv add fastapi uvicorn pydantic
+
+# パッケージの削除
+uv remove パッケージ名
+
+# テストの実行
+uv run --frozen pytest tests/ -v
+
+# アプリケーションの起動
+cd api && uv run uvicorn main:app --reload
+```
+
+**注意**：プロジェクトに pyproject.toml があれば、Python のインストールも含めてすべて自動化されます。ローカルPython環境での高速開発が可能です。
+
+### 環境管理緊急プロトコル（必須遵守）
+
+**テストライブラリ不足エラーが発生した場合の対処法：**
+
+#### 手順1: 現在位置と環境の確認（必須）
+
+```bash
+pwd  # プロジェクトルートにいることを確認
+cat pyproject.toml | head -20  # 設定確認
+```
+
+#### 手順2: 依存関係の統一管理
+
+```bash
+# 絶対にサブディレクトリ（api/, ui/）ではなく、ルートで実行
+uv add --dev pytest httpx asgi-lifespan trio fastapi
+uv sync
+```
+
+#### 手順3: テスト環境の検証
+
+```bash
+uv run --frozen pytest tests/ --collect-only  # テスト収集確認
+uv run --frozen pytest tests/ -v  # 実際のテスト実行
+```
+
+#### 絶対禁止パターン
+
+- ❌ `cd api && uv add` → `cd .. && pytest` （環境混在）
+- ❌ エラー時の場当たり的パッケージ追加
+- ❌ 複数環境での重複パッケージ管理
+
+#### 環境の原則
+
+- **テスト実行**: 常にプロジェクトルートから
+- **依存関係**: テストツールはルートのpyproject.tomlに集約
+- **本番デプロイ**: api/, ui/は最小限の依存関係のみ
+
+#### 分離デプロイ構造での環境管理
+
+```
+project/
+├── pyproject.toml          # 開発・テスト環境（統合）
+│   ├── optional-dependencies.dev: pytest, httpx, ruff, pyright
+│   ├── optional-dependencies.api: fastapi, uvicorn, pydantic
+│   └── optional-dependencies.ui: streamlit, pydantic
+├── api/pyproject.toml      # 本番デプロイ専用（最小限）
+│   └── dependencies: fastapi, uvicorn, pydantic のみ
+└── ui/pyproject.toml       # 本番デプロイ専用（最小限）
+    └── dependencies: streamlit, pydantic のみ
+```
+
+**重要**: httpxはFastAPIテスト用のため、devグループに配置（UIの本番環境では不要）
+
+## TDD実践の具体的フロー
+
+### 1. テストリストの作成
+
+Issueを開始する前に、実装すべきテストケースをリストアップ：
+
+```bash
+# TODOコメントとしてテストファイルに記載
+# TODO: test_create_product_returns_201
+# TODO: test_create_product_with_valid_data_returns_product
+# TODO: test_create_product_with_empty_name_returns_400
+# TODO: test_create_product_with_negative_price_returns_400
+```
+
+### 2. TDDサイクルの実行
+
+各テストケースに対して以下を繰り返す：
+
+```bash
+# 1. Red: テストを書いて失敗を確認
+uv run --frozen pytest tests/test_product.py::test_create_product_returns_201 -v
+# AssertionError を確認
+
+# 2. Green: 最小限の実装
+# 仮実装 → 三角測量 → 一般化の順で進める
+
+# 3. テストが通ることを確認
+uv run --frozen pytest tests/test_product.py::test_create_product_returns_201 -v
+
+# 4. コミット（各サイクルごと）
+git add .
+git commit -m "test: add test for product creation returns 201"
+git commit -m "feat: implement minimal product creation endpoint"
+
+# 5. Refactor: 必要に応じてリファクタリング
+# すべてのテストが通ることを確認しながら進める
+uv run --frozen pytest tests/ -v
+
+### pre-commit後のテスト確認（重要）
+
+**t-wada方式TDDの絶対的ルール**: 以下の場合は必ず手動でテストを再実行してグリーンを確認する
+1. pre-commitフックが自動修正を行った場合
+2. pre-commitでエラーが発生して手動修正した場合
+
+```bash
+# ケース1: pre-commitが自動修正した場合
+git commit -m "..."
+# → pre-commitが自動修正実行（ruff-check --fix, ruff-format等）
+
+# ケース2: pre-commitでエラーが発生した場合  
+git commit -m "..."
+# → pre-commitが失敗、エラーメッセージを表示
+# → エラーを手動で修正
+
+# いずれの場合も必ず以下を手動実行：
+uv run --frozen pytest  # 手動でテスト実行
+# → 全テストがPASSEDになることを確認
+
+# テストがグリーンなら修正ファイルを再コミット：
+git add .
+git commit -m "..."  # 修正されたファイルでコミット
+
+# AIは必ず上記の手順を実行すること（自動化不可）
+```
+
+**重要**: AIは以下の場合に必ず `uv run --frozen pytest` を手動実行してからコミットを完了すること：
+
+- pre-commitが自動修正した場合
+- pre-commitエラーで手動修正した場合
+
+### 3. コミットメッセージの規則（TDD用）
+
+- `test:` テストの追加・修正
+- `feat:` 機能の実装（テストを通すため）
+- `refactor:` リファクタリング（テストは変更しない）
+
+例：
+
+```bash
+git commit -m "test: add test for product creation with empty name"
+git commit -m "feat: add name validation to product creation"
+git commit -m "refactor: extract validation logic to separate function"
+```
+
+## ブランチ名の規則
+
+- feature/task-{issue番号}-{簡潔な説明}
+- 例：feature/task-1-project-setup
+
+## Cloud Run MCPでのデプロイ
+
+### 必須の事前準備
+
+1. **api/requirements.txt を作成**
+   ```bash
+   uv pip compile pyproject.toml --extra api -o api/requirements.txt
+   ```
+
+2. **インポートパスを相対インポートに統一**
+   - ❌ `from models import ProductModel`
+   - ✅ `from .models import ProductModel`
+
+### MCPデプロイコマンド
+
+```
+mcp__cloud-run__deploy_local_folder
+- folderPath: ./api
+- project: YOUR_PROJECT_ID
+- region: asia-northeast1
+```

@@ -1,0 +1,177 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# コード品質・開発ガイドライン
+
+このドキュメントは、このコードベースで作業する際の重要な情報を含んでいます。
+以下のガイドラインを正確に守ってください。
+
+## 開発の基本ルール
+
+### 1. パッケージ管理
+
+- **必須: uvのみ使用、pipは絶対に使用禁止**
+- インストール: `uv add package`
+- ツール実行: `uv run tool`
+- アップグレード: `uv add --dev package --upgrade-package package`
+- **禁止**: `uv pip install`、`@latest`構文
+
+### 2. コード品質要件
+
+- **すべてのコードに型ヒント必須**
+- **パブリックAPIにはdocstring必須**
+- **関数は焦点を絞り、小さく設計**
+- **既存パターンを正確に踏襲**
+- **行長制限: 最大100文字**（このプロジェクトではPEP 8の79文字を100文字に拡張）
+
+### 3. テスト要件（t-wada方式TDD）
+
+- **フレームワーク**: `uv run --frozen pytest`
+- **非同期テスト**: anyio使用、asyncio使用禁止
+- **カバレッジ**: エッジケースとエラーケースをテスト
+- **TDD厳守**: 実装前に必ず失敗するテストを書く
+- **1テスト1アサーション**: アサーションルーレットを避ける
+- **新機能にはテスト必須**: Red-Green-Refactorサイクルで実装
+- **バグ修正には回帰テスト必須**: まず失敗するテストでバグを再現
+- **テストファースト**: テストなしのコードは絶対に書かない
+
+## Pythonコードフォーマットツール
+
+### 1. Ruff（主要フォーマッター・リンター）
+
+- **フォーマット**: `uv run --frozen ruff format .`
+- **チェック**: `uv run --frozen ruff check .`
+- **修正**: `uv run --frozen ruff check . --fix`
+
+#### 重要なRuffの問題
+
+- 行長制限（100文字）
+- インポートソート（I001）
+- 未使用インポート
+
+#### 行の折り返しガイドライン
+
+- **文字列**: 括弧を使用
+- **関数呼び出し**: 適切なインデントで複数行
+- **インポート**: 複数行に分割
+
+### 2. 型チェック
+
+- **ツール**: Pyrightを使用（VSCode/Cursorで自動実行）
+- **手動実行**: 必要に応じて `uv run --frozen pyright`
+- **要件**:
+  - OptionalのNoneチェックを明示的に
+  - 文字列の型の絞り込み
+  - バージョン警告はチェックが通れば無視可能
+- **注**: mypyは使用しません（シンプルさ重視）
+
+### 3. Pre-commitフック（TDD強化済み）
+
+- **設定**: `.pre-commit-config.yaml`
+- **実行**: git commit時
+- **ツール**: uv-lock、Ruff（Python）、pytest（テスト実行）
+- **重要**: 以下の場合は必ず手動でテスト実行
+  - pre-commitが自動修正した場合
+  - pre-commitでエラーが発生して手動修正した場合
+- **フロー**:
+  1. uv-lock（依存関係更新）
+  2. ruff-check --fix（コード修正）
+  3. ruff-format（フォーマット）
+  4. pytest-check（テスト実行）
+  5. **修正発生時**: `uv run --frozen pytest` を手動実行してから再コミット
+- **AIの必須動作**:
+  - 自動修正後は必ず `uv run --frozen pytest` を実行
+  - pre-commitエラー修正後も必ず `uv run --frozen pytest` を実行
+- **Ruffアップデート**:
+  - PyPIバージョンをチェック
+  - config revを更新
+  - 設定を最初にコミット
+
+## エラー解決の優先順位
+
+### CI失敗時の修正順序
+
+1. **フォーマットエラーを最初に**
+2. **型エラーを2番目に**
+3. **リントエラーを最後に**
+
+### よくある問題と解決策
+
+#### 行長制限違反
+
+- 文字列を括弧で折り返し
+- 関数呼び出しを複数行に
+- インポートを分割
+
+#### 型エラー
+
+- 完全な行コンテキストを取得
+- Optional型をチェック
+- 型の絞り込みを追加
+- 関数シグネチャを確認
+
+#### Pytestの問題
+
+- anyio pytest markが見つからない場合は以下を試す:
+  `PYTEST_DISABLE_PLUGIN_AUTOLOAD="" uv run --frozen pytest`
+
+## ベストプラクティス
+
+### 開発ワークフロー（TDD必須）
+
+- **TDDサイクルの徹底**: Red→Green→Refactorを必ず守る
+- **テストファースト**: 実装コードの前に必ずテストを書く
+- **グリーンキープ**: 以下の場合は手動でpytest実行必須
+  - pre-commit自動修正後
+  - pre-commitエラー修正後
+  - コード編集後
+- **絶対ルール**:
+  - pre-commitで自動修正が発生したら `uv run --frozen pytest` を実行
+  - pre-commitでエラーが発生して修正したら `uv run --frozen pytest` を実行
+- **コミット前にgit statusを確認**
+- **型チェック前にフォーマッターを実行**
+- **変更は最小限に保つ**
+- **既存パターンに従う**
+- **パブリックAPIにドキュメント記述**
+- **テストを徹底的に実施**: 1テスト1アサーション原則
+- **ローカル環境**: Docker不要の高速Python開発
+
+### Gitコミットガイドライン
+
+- ユーザーレポートに基づくバグ修正・機能追加の場合:
+
+  ```bash
+  git commit --trailer "Reported-by:<name>"
+  ```
+
+- GitHub issue関連のコミットの場合:
+
+  ```bash
+  git commit --trailer "Github-Issue:#<number>"
+  ```
+
+- **絶対に言及禁止**: `co-authored-by`やツール使用について
+
+### プルリクエスト
+
+- 詳細な説明を作成
+- 問題の説明と解決アプローチに焦点
+- 必要でない限りコードの詳細は記述しない
+- **絶対に言及禁止**: `co-authored-by`やツール使用について
+
+## 品質チェックコマンド
+
+```bash
+# 完全な品質チェックシーケンス
+uv run --frozen ruff format .
+uv run --frozen ruff check . --fix
+uv run --frozen pyright
+uv run --frozen pytest
+
+# Markdown品質チェック
+markdownlint *.md
+```
+
+コード変更後はこれらのコマンドを実行して品質基準を確保してください。

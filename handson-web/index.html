@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cursor×Python×GitHub ハンズオン</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <style>
+        .progress-container {
+            background: #f3f4f6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, #3b82f6 var(--progress, 0%), #e5e7eb var(--progress, 0%));
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .command-block {
+            position: relative;
+        }
+        .copy-button {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        .copy-button:hover {
+            opacity: 1;
+        }
+        .copy-success {
+            background: #10b981;
+            color: white;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+        }
+        .nav-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 固定ヘッダー（進捗バー） -->
+    <header class="fixed top-0 w-full bg-white shadow-sm z-50">
+        <div class="container mx-auto px-4 py-4">
+            <!-- 進捗バー -->
+            <div class="mb-3">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-gray-700">進捗</span>
+                    <span class="text-sm text-gray-500 progress-percentage">0%</span>
+                </div>
+                <div class="progress-container h-3 w-full">
+                    <div class="progress-bar h-3 w-full" style="--progress: 0%"></div>
+                </div>
+            </div>
+            <!-- パート情報 -->
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <span class="current-part font-semibold text-lg">Part 1/6</span>
+                    <span class="part-title text-gray-600">環境構築</span>
+                </div>
+                <div class="time-info text-sm text-gray-500">
+                    <span class="elapsed-time">0分経過</span> / 
+                    <span class="remaining-time">1.5時間残</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="pt-32 pb-20 container mx-auto px-4 max-w-4xl">
+        <!-- Part 1: 環境構築 -->
+        <div class="step-content active" id="step-1">
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <div class="flex items-center mb-4">
+                    <i data-lucide="settings" class="w-6 h-6 text-blue-500 mr-2"></i>
+                    <h1 class="text-2xl font-bold">Part 1: 環境構築（20分）</h1>
+                </div>
+                <p class="text-gray-600 mb-6">プログラミングを始める前に、必要なソフトをインストールします。全てコピー＆ペーストで進められるので、プログラミング初心者でも安心してください。</p>
+                
+                <div class="space-y-6">
+                    <!-- 1.1 Volta のインストール -->
+                    <div class="border-l-4 border-blue-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="download" class="w-5 h-5 mr-2"></i>
+                            1.1 Volta のインストール（Node.js 管理ツール）
+                        </h3>
+                        <p class="text-gray-600 mb-4">システムのターミナル（Cursor はまだ起動していません）で以下を実行します。</p>
+                        
+                        <div class="command-block">
+                            <pre class="language-bash bg-gray-900 text-white p-4 rounded overflow-x-auto"><code>curl https://get.volta.sh | bash</code></pre>
+                            <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="curl https://get.volta.sh | bash">
+                                <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- 環境変数設定の重要な注意事項 -->
+                        <div class="mt-4">
+                            <button class="flex items-center justify-between w-full px-4 py-2 text-left bg-orange-100 hover:bg-orange-200 rounded transition-colors volta-env-toggle">
+                                <span class="font-semibold text-orange-800 flex items-center">
+                                    <i data-lucide="alert-triangle" class="w-4 h-4 mr-2"></i>
+                                    重要：インストール後の環境設定
+                                </span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 text-orange-600 transition-transform volta-env-icon"></i>
+                            </button>
+                            
+                            <div class="volta-env-content hidden mt-4 space-y-4">
+                                <div class="bg-orange-50 p-4 rounded">
+                                    <p class="text-sm mb-3">Voltaインストール後は環境変数の設定が必要です。以下のいずれかの方法で対応してください。</p>
+                                    
+                                    <div class="space-y-3">
+                                        <div>
+                                            <h5 class="font-semibold text-sm mb-1">方法1（推奨）：新しいターミナルタブを開く</h5>
+                                            <p class="text-xs text-gray-600">現在のターミナルタブを閉じて、新しいタブを開いてください。</p>
+                                        </div>
+                                        
+                                        <div>
+                                            <h5 class="font-semibold text-sm mb-1">方法2：環境変数を手動で読み込む</h5>
+                                            <div class="command-block">
+                                                <pre class="language-bash bg-gray-900 text-white p-3 rounded overflow-x-auto text-sm"><code>source ~/.zshrc</code></pre>
+                                                <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="source ~/.zshrc">
+                                                    <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h4 class="font-semibold mb-2">動作確認</h4>
+                            <div class="command-block">
+                                <pre class="language-bash bg-gray-900 text-white p-4 rounded overflow-x-auto"><code>volta --version</code></pre>
+                                <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="volta --version">
+                                    <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h4 class="font-semibold mb-2">Node.js のインストール</h4>
+                            <div class="command-block">
+                                <pre class="language-bash bg-gray-900 text-white p-4 rounded overflow-x-auto"><code># 最新の長期サポート版（推奨）
+volta install node
+
+# 確認
+node --version
+npm --version</code></pre>
+                                <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="volta install node&#10;node --version&#10;npm --version">
+                                    <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 1.2 Cursor のインストール -->
+                    <div class="border-l-4 border-green-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="monitor" class="w-5 h-5 mr-2"></i>
+                            1.2 Cursor のインストール
+                        </h3>
+                        <div class="bg-blue-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2">Step 1: ダウンロード</h4>
+                            <ol class="list-decimal list-inside space-y-1 text-sm">
+                                <li>ブラウザで <a href="https://cursor.com" class="text-blue-600 underline" target="_blank">cursor.com</a> を開く</li>
+                                <li>「ダウンロード MacOS」ボタンをクリック</li>
+                                <li>ダウンロードが完了するまで待つ</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="bg-green-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2">Step 2: インストール</h4>
+                            <ol class="list-decimal list-inside space-y-1 text-sm">
+                                <li>「Cursor-xxx.dmg」をダブルクリック</li>
+                                <li>Cursor アイコンを「Applications」フォルダにドラッグ</li>
+                                <li>Launchpad から「Cursor」を起動</li>
+                            </ol>
+                        </div>
+                        
+                        <!-- 詳細設定の折りたたみセクション -->
+                        <div class="mt-4">
+                            <button class="flex items-center justify-between w-full px-4 py-2 text-left bg-gray-100 hover:bg-gray-200 rounded transition-colors cursor-settings-toggle">
+                                <span class="font-semibold text-gray-700">詳細な初期設定手順を見る</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 text-gray-600 transition-transform cursor-settings-icon"></i>
+                            </button>
+                            
+                            <div class="cursor-settings-content hidden mt-4 space-y-4">
+                                <div class="bg-yellow-50 p-4 rounded">
+                                    <h4 class="font-semibold mb-2">Step 3: 起動</h4>
+                                    <ol class="list-decimal list-inside space-y-1 text-sm">
+                                        <li>Launchpad を開く</li>
+                                        <li>「<strong>Cursor</strong>」を見つけてクリック</li>
+                                    </ol>
+                                </div>
+                                
+                                <div class="border-l-4 border-orange-500 pl-4">
+                                    <h4 class="text-lg font-semibold mb-3">初期設定（10分）</h4>
+                                    <p class="text-sm text-gray-600 mb-4">初回起動時に設定します。ゆっくりひとつずつ進めていきましょう。</p>
+                                    
+                                    <div class="space-y-4">
+                                        <div class="bg-blue-50 p-4 rounded">
+                                            <h5 class="font-semibold mb-2">Step 1：ログイン</h5>
+                                            <ul class="list-disc list-inside space-y-1 text-sm">
+                                                <li>「<strong>Sign in with GitHub</strong>」をクリック</li>
+                                                <li>GitHub アカウントでログイン（ない場合はその場で作成できます）</li>
+                                            </ul>
+                                        </div>
+                                        
+                                        <div class="bg-green-50 p-4 rounded">
+                                            <h5 class="font-semibold mb-2">Step 2：基本設定</h5>
+                                            <ol class="list-decimal list-inside space-y-2 text-sm">
+                                                <li><strong>テーマ選択</strong>：
+                                                    <ul class="list-disc list-inside ml-4 mt-1">
+                                                        <li>Cursor Dark、Cursor Dark Midnight、Cursor Dark High Contrast から選択</li>
+                                                        <li>「<strong>Continue</strong>」をクリック</li>
+                                                    </ul>
+                                                </li>
+                                                <li><strong>キーバインディング選択</strong>：
+                                                    <ul class="list-disc list-inside ml-4 mt-1">
+                                                        <li>VS Code（デフォルト）、Vim、Emacs、Sublime Text から選択</li>
+                                                        <li>「<strong>Continue</strong>」をクリック</li>
+                                                    </ul>
+                                                </li>
+                                                <li><strong>データ共有の確認</strong>：
+                                                    <ul class="list-disc list-inside ml-4 mt-1">
+                                                        <li>チェックボックスを ON にして「<strong>Continue</strong>」をクリック</li>
+                                                        <li><strong>重要</strong>：後でプライバシー設定を変更します</li>
+                                                    </ul>
+                                                </li>
+                                                <li><strong>Review Settings 画面</strong>：
+                                                    <ul class="list-disc list-inside ml-4 mt-1">
+                                                        <li><strong>Language for AI</strong>：「<strong>Japanese</strong>」を選択（デフォルトは Auto）</li>
+                                                        <li><strong>Open from Terminal</strong>：「<strong>Install</strong>」ボタンをクリック（デフォルトの「<strong>cursor command</strong>」が選択されている状態で）</li>
+                                                        <li>「<strong>Continue</strong>」をクリック</li>
+                                                    </ul>
+                                                </li>
+                                            </ol>
+                                        </div>
+                                        
+                                        <div class="bg-red-50 p-4 rounded">
+                                            <h5 class="font-semibold mb-2">Step 3：プライバシー設定（重要）</h5>
+                                            <ol class="list-decimal list-inside space-y-1 text-sm">
+                                                <li>右上の歯車アイコンをクリック</li>
+                                                <li>「<strong>General</strong>」→「<strong>Privacy</strong>」</li>
+                                                <li>「<strong>Privacy Mode</strong>」を選択
+                                                    <ul class="list-disc list-inside ml-4 mt-1">
+                                                        <li>これで、あなたのコードが学習に使われません</li>
+                                                    </ul>
+                                                </li>
+                                            </ol>
+                                        </div>
+                                        
+                                        <div class="bg-purple-50 p-4 rounded">
+                                            <h5 class="font-semibold mb-2">Step 4：日本語化</h5>
+                                            <ol class="list-decimal list-inside space-y-1 text-sm">
+                                                <li><code>Cmd</code> + <code>Shift</code> + <code>X</code> を押す（拡張機能を開く）</li>
+                                                <li>検索欄に「<code>Japanese</code>」と入力</li>
+                                                <li>「<strong>Japanese Language Pack for Visual Studio Code</strong>」の「<strong>Install</strong>」ボタンをクリック</li>
+                                                <li>左下に表示される「<strong>Change Language and Restart</strong>」をクリック</li>
+                                            </ol>
+                                        </div>
+                                        
+                                        <div class="bg-gray-50 p-4 rounded">
+                                            <h5 class="font-semibold mb-2">Step 5：設定完了</h5>
+                                            <ul class="list-disc list-inside space-y-1 text-sm">
+                                                <li>Cursor Settings タブの「×」をクリックして閉じる</li>
+                                            </ul>
+                                        </div>
+                                        
+                                        <div class="bg-indigo-50 p-4 rounded">
+                                            <h5 class="font-semibold mb-2">【豆知識】</h5>
+                                            <ul class="list-disc list-inside space-y-1 text-sm">
+                                                <li>Cursor Pro の<strong>14 日間無料トライアル</strong>が使えます</li>
+                                                <li>設定は後からいつでも変更できるので安心してください</li>
+                                                <li>VS Code を使ったことがある方は、設定を引き継げます</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 1.3 開発ツールのインストール -->
+                    <div class="border-l-4 border-purple-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="terminal" class="w-5 h-5 mr-2"></i>
+                            1.3 開発ツールのインストール
+                        </h3>
+                        
+                        <div class="bg-yellow-50 p-4 rounded mb-4">
+                            <p class="text-sm"><strong>重要:</strong> Cursor で <code>Ctrl + Shift + ~</code> を押してターミナルを開いてください。これ以降、すべてのコマンドは Cursor 内のターミナルで実行します。</p>
+                        </div>
+                        
+                        <h4 class="font-semibold mb-2">uv のインストール</h4>
+                        <div class="command-block">
+                            <pre class="language-bash bg-gray-900 text-white p-4 rounded overflow-x-auto"><code>curl -LsSf https://astral.sh/uv/install.sh | sh</code></pre>
+                            <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="curl -LsSf https://astral.sh/uv/install.sh | sh">
+                                <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        
+                        <h4 class="font-semibold mb-2 mt-4">GitHub CLI のインストール</h4>
+                        <div class="command-block">
+                            <pre class="language-bash bg-gray-900 text-white p-4 rounded overflow-x-auto"><code># Homebrewが未インストールの場合はまずこちら
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# GitHub CLIをインストール
+brew install gh</code></pre>
+                            <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="brew install gh">
+                                <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        
+                        <h4 class="font-semibold mb-2 mt-4">Google Cloud CLI のインストール</h4>
+                        <div class="command-block">
+                            <pre class="language-bash bg-gray-900 text-white p-4 rounded overflow-x-auto"><code># Google Cloud CLI をインストール
+brew install --cask google-cloud-sdk
+
+# インストール確認
+gcloud version</code></pre>
+                            <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="brew install --cask google-cloud-sdk">
+                                <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        
+                        <h4 class="font-semibold mb-2 mt-4">初期認証設定</h4>
+                        <div class="command-block">
+                            <pre class="language-bash bg-gray-900 text-white p-4 rounded overflow-x-auto"><code># Google Cloud CLI の初期設定
+gcloud init
+
+# 確認コマンド
+gcloud auth list</code></pre>
+                            <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="gcloud init">
+                                <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+
+                        <div class="bg-yellow-50 p-4 rounded mb-4">
+                            <h5 class="font-semibold mb-2">期待される結果</h5>
+                            <p class="text-sm mb-1">✓ ブラウザでGoogle認証が完了。</p>
+                            <p class="text-sm mb-1">✓ プロジェクトが選択される。</p>
+                            <p class="text-sm">✓ gcloud auth list でアカウントが表示される。</p>
+                        </div>
+
+                        <details class="bg-gray-50 p-4 rounded mb-4">
+                            <summary class="font-semibold cursor-pointer">トラブルシューティング</summary>
+                            <div class="mt-2 space-y-2">
+                                <div>
+                                    <h6 class="font-semibold text-sm">リモート環境（SSH等）の場合</h6>
+                                    <div class="command-block">
+                                        <pre class="language-bash bg-gray-900 text-white p-2 rounded text-sm"><code>gcloud init --no-launch-browser</code></pre>
+                                        <button class="copy-button bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600 transition-colors" data-copy="gcloud init --no-launch-browser">
+                                            <i data-lucide="clipboard-copy" class="w-3 h-3"></i>
+                                        </button>
+                                    </div>
+                                    <p class="text-xs text-gray-600 mt-1">表示されたURLをブラウザから手動で開いてください。</p>
+                                </div>
+                                <div>
+                                    <h6 class="font-semibold text-sm">認証エラーが発生した場合</h6>
+                                    <div class="command-block">
+                                        <pre class="language-bash bg-gray-900 text-white p-2 rounded text-sm"><code>gcloud auth revoke --all
+gcloud init</code></pre>
+                                        <button class="copy-button bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600 transition-colors" data-copy="gcloud auth revoke --all">
+                                            <i data-lucide="clipboard-copy" class="w-3 h-3"></i>
+                                        </button>
+                                    </div>
+                                    <p class="text-xs text-gray-600 mt-1">既存の認証をクリアして再設定します。</p>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+
+                    <!-- 1.4 プロジェクトの準備 -->
+                    <div class="border-l-4 border-orange-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="folder-plus" class="w-5 h-5 mr-2"></i>
+                            1.4 プロジェクトの準備（10分）
+                        </h3>
+                        
+                        <div class="bg-blue-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2">Step 1: テンプレートを開く</h4>
+                            <p class="text-sm mb-2">ブラウザで以下のリンクを開いてください。</p>
+                            <div class="command-block">
+                                <pre class="language-text bg-gray-900 text-white p-4 rounded overflow-x-auto"><code>https://github.com/asakaguchi/cursor-workshop-template</code></pre>
+                                <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="https://github.com/asakaguchi/cursor-workshop-template">
+                                    <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-green-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2">Step 2: 自分のプロジェクトを作る</h4>
+                            <ol class="list-decimal list-inside space-y-1 text-sm">
+                                <li>青色の「<strong>Use this template</strong>」ボタンをクリック</li>
+                                <li>「<strong>Create a new repository</strong>」を選択</li>
+                                <li><strong>Repository name</strong>に「<code>my-cursor-workshop</code>」と入力</li>
+                                <li>「<strong>Create repository</strong>」をクリック</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="bg-purple-50 p-4 rounded">
+                            <h4 class="font-semibold mb-2">Step 3: Cursor でプロジェクトを開く</h4>
+                            <ol class="list-decimal list-inside space-y-1 text-sm">
+                                <li><code>Cmd + Shift + P</code> でコマンドパレットを開く</li>
+                                <li>「<strong>Git: Clone</strong>」と入力して <code>Enter</code></li>
+                                <li>「<strong>GitHub から複製</strong>」を選択</li>
+                                <li>「<strong>拡張機能 'GitHub' が GitHub を使用してサインインしようとしています</strong>」のダイアログで、「<strong>許可</strong>」をクリック</li>
+                                <li>「<strong>コピーして GitHub に進む</strong>」をクリック</li>
+                                <li>自身の GitHub アカウントで認証（ブラウザで認証コードをペースト）</li>
+                                <li>「<strong>Authorize Visual Studio Code</strong>」で「<strong>Authorize Visual-Studio-Code</strong>」をクリック</li>
+                                <li>Cursor に戻り、作成したリポジトリ（<code>my-cursor-workshop</code>）を選択</li>
+                                <li>保存先フォルダを選択して「<strong>リポジトリの宛先として選択</strong>」をクリック（「<strong>Projects</strong>」フォルダーの作成を推奨）</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <!-- 1.5 MCP サーバーの有効化 -->
+                    <div class="border-l-4 border-yellow-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="plug" class="w-5 h-5 mr-2"></i>
+                            1.5 MCP サーバーの有効化
+                        </h3>
+                        
+                        <div class="bg-yellow-50 p-4 rounded mb-4">
+                            <p class="text-sm mb-2">画面左下に以下の通知が表示されたら、それぞれ「<strong>Enable</strong>」ボタンをクリックしてください。</p>
+                            <ul class="list-disc list-inside space-y-1 text-sm">
+                                <li>「<strong>New MCP Server detected: cloud-run</strong>」</li>
+                                <li>「<strong>New MCP Server detected: context7</strong>」</li>
+                                <li>「<strong>New MCP Server detected: playwright</strong>」</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 1.6 Python 環境のセットアップ -->
+                    <div class="border-l-4 border-red-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="package" class="w-5 h-5 mr-2"></i>
+                            1.6 Python 環境のセットアップ
+                        </h3>
+                        
+                        <div class="bg-yellow-50 p-4 rounded mb-4">
+                            <p class="text-sm"><strong>重要:</strong> まず Cursor で <code>Ctrl + Shift + ~</code> を押してターミナルを開いてください。これ以降のコマンドは全て Cursor 内のターミナルで実行します。</p>
+                        </div>
+                        
+                        <h4 class="font-semibold mb-2">環境をセットアップ：</h4>
+                        <div class="command-block">
+                            <pre class="language-bash bg-gray-900 text-white p-4 rounded overflow-x-auto"><code># プロジェクトに必要な道具を全部そろえる
+uv sync
+
+# 各サブディレクトリでも個別にセットアップ
+cd api && uv sync && cd ..
+cd ui && uv sync && cd ..</code></pre>
+                            <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="uv sync&#10;cd api && uv sync && cd ..&#10;cd ui && uv sync && cd ..">
+                                <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        
+                        <h4 class="font-semibold mb-2 mt-4">品質チェックツールのセットアップ：</h4>
+                        <div class="command-block">
+                            <pre class="language-bash bg-gray-900 text-white p-4 rounded overflow-x-auto"><code>uv run --extra dev pre-commit install</code></pre>
+                            <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="uv run --extra dev pre-commit install">
+                                <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        
+                        <h4 class="font-semibold mb-2 mt-4">GitHub CLI の認証設定：</h4>
+                        <div class="command-block">
+                            <pre class="language-bash bg-gray-900 text-white p-4 rounded overflow-x-auto"><code># GitHub認証開始
+gh auth login</code></pre>
+                            <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="gh auth login">
+                                <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="bg-blue-50 p-4 rounded mt-4">
+                            <h5 class="font-semibold mb-2">認証時の選択肢：</h5>
+                            <ul class="text-sm space-y-1">
+                                <li>1. <strong>GitHub.com</strong> を選択</li>
+                                <li>2. <strong>HTTPS</strong> を選択</li>
+                                <li>3. そのまま Enter</li>
+                                <li>4. <strong>Login with a web browser</strong> を選択</li>
+                                <li>5. ブラウザで認証コードを入力</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- チェックポイント -->
+                    <div class="bg-green-50 border border-green-200 rounded p-4">
+                        <div class="flex items-center mb-2">
+                            <i data-lucide="check-circle" class="w-5 h-5 text-green-600 mr-2"></i>
+                            <h4 class="font-semibold text-green-800">チェックポイント</h4>
+                        </div>
+                        <ul class="space-y-1 text-sm text-green-700">
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> Volta がインストールされている</li>
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> Cursor が起動できる</li>
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> uv, gh, gcloud コマンドが動作する</li>
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> プロジェクトがCursorで開けている</li>
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> MCP サーバーが有効化されている</li>
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> GitHub CLI 認証が完了している</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Part 2: AI対話体験 -->
+        <div class="step-content" id="step-2">
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <div class="flex items-center mb-4">
+                    <i data-lucide="message-circle" class="w-6 h-6 text-blue-500 mr-2"></i>
+                    <h1 class="text-2xl font-bold">Part 2: AIとの対話を体験しよう（5分）</h1>
+                </div>
+                <p class="text-gray-600 mb-6">AI と実際に話してみましょう。理論は後回し、まずは触って体験することから始めます。</p>
+                
+                <div class="space-y-6">
+                    <!-- 2.1 Cursor の AI 機能を体験 -->
+                    <div class="border-l-4 border-blue-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="bot" class="w-5 h-5 mr-2"></i>
+                            2.1 Cursor の AI 機能を体験しよう
+                        </h3>
+                        
+                        <div class="bg-blue-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2">Step 1: チャットを開く</h4>
+                            <p class="text-sm">Cursor で <code>Cmd + I</code> を押してチャットパネルを開きます。</p>
+                        </div>
+                        
+                        <div class="bg-green-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2">Step 2: AI モデルの選択</h4>
+                            <ol class="list-decimal list-inside space-y-1 text-sm">
+                                <li>チャット欄下部の「Auto」をクリック</li>
+                                <li>「Auto」スイッチをオフにする</li>
+                                <li>「gemini-2.5-pro」を選択</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="bg-purple-50 p-4 rounded">
+                            <h4 class="font-semibold mb-2">Step 3: 最初の質問</h4>
+                            <p class="text-sm mb-2">以下をコピー&ペーストして送信してください。</p>
+                            <div class="command-block">
+                                <pre class="language-text bg-gray-900 text-white p-4 rounded overflow-x-auto"><code>@requirements.md @CLAUDE.md を読んで、どんなアプリを作るのか教えてください。
+初心者にもわかりやすく説明してください。</code></pre>
+                                <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="@requirements.md @CLAUDE.md を読んで、どんなアプリを作るのか教えてください。&#10;初心者にもわかりやすく説明してください。">
+                                    <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- チェックポイント -->
+                    <div class="bg-green-50 border border-green-200 rounded p-4">
+                        <div class="flex items-center mb-2">
+                            <i data-lucide="check-circle" class="w-5 h-5 text-green-600 mr-2"></i>
+                            <h4 class="font-semibold text-green-800">チェックポイント</h4>
+                        </div>
+                        <ul class="space-y-1 text-sm text-green-700">
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> AI チャットが開けた</li>
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> AI が質問に答えてくれた</li>
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> プロジェクトの内容を理解した</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Part 3: Issue駆動開発 -->
+        <div class="step-content" id="step-3">
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <div class="flex items-center mb-4">
+                    <i data-lucide="list-checks" class="w-6 h-6 text-blue-500 mr-2"></i>
+                    <h1 class="text-2xl font-bold">Part 3: API開発タスクの計画（10分）</h1>
+                </div>
+                <p class="text-gray-600 mb-6">AI にお任せして、作業を整理してもらいましょう。Cursor のルールに従って、自動的に15-30分で完了可能なタスクに分解されます。</p>
+                
+                <div class="space-y-6">
+                    <!-- 3.1 作業の分解 -->
+                    <div class="border-l-4 border-blue-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="scissors" class="w-5 h-5 mr-2"></i>
+                            3.1 作業の分解をお願いしよう
+                        </h3>
+                        
+                        <p class="text-gray-600 mb-4">チャットで以下を送信してください。</p>
+                        <div class="command-block">
+                            <pre class="language-text bg-gray-900 text-white p-4 rounded overflow-x-auto"><code>@requirements.md を確認して、API開発のタスクを分解してください。</code></pre>
+                            <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="@requirements.md を確認して、API開発のタスクを分解してください。">
+                                <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3.2 作業リストを GitHub に保存 -->
+                    <div class="border-l-4 border-green-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="github" class="w-5 h-5 mr-2"></i>
+                            3.2 作業リストを GitHub に保存
+                        </h3>
+                        
+                        <p class="text-gray-600 mb-4">タスクの内容を確認して、良さそうだったら以下を入力するだけです。</p>
+                        <div class="command-block">
+                            <pre class="language-text bg-gray-900 text-white p-4 rounded overflow-x-auto"><code>ok</code></pre>
+                            <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="ok">
+                                <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="bg-blue-50 p-4 rounded mt-4">
+                            <h4 class="font-semibold mb-2 flex items-center">
+                                <i data-lucide="info" class="w-4 h-4 mr-1"></i>
+                                Cursor の自動化機能
+                            </h4>
+                            <p class="text-sm">「ok」と承認すると、Cursor のルールに従って AI が自動的に GitHub Issues を作成します。各 Issue 作成前に「Run」ボタンが表示されるので、内容を確認してクリックしてください。</p>
+                        </div>
+                    </div>
+
+                    <!-- 3.3 作業リストを確認 -->
+                    <div class="border-l-4 border-purple-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="eye" class="w-5 h-5 mr-2"></i>
+                            3.3 作業リストを確認
+                        </h3>
+                        
+                        <p class="text-gray-600 mb-4">GitHub で作業リストを見てみましょう。</p>
+                        <div class="command-block">
+                            <pre class="language-bash bg-gray-900 text-white p-4 rounded overflow-x-auto"><code>gh repo view --web</code></pre>
+                            <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="gh repo view --web">
+                                <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="bg-blue-50 p-4 rounded mt-4">
+                            <p class="text-sm">ブラウザが開いたら「Issues」タブをクリックして、作られた作業リストを確認してください。</p>
+                        </div>
+                    </div>
+
+                    <!-- チェックポイント -->
+                    <div class="bg-green-50 border border-green-200 rounded p-4">
+                        <div class="flex items-center mb-2">
+                            <i data-lucide="check-circle" class="w-5 h-5 text-green-600 mr-2"></i>
+                            <h4 class="font-semibold text-green-800">チェックポイント</h4>
+                        </div>
+                        <ul class="space-y-1 text-sm text-green-700">
+                            <li class="flex items-center"><i data-lucide="circle" class="w-4 h-4 mr-2"></i> AI がタスクを分解してくれた</li>
+                            <li class="flex items-center"><i data-lucide="circle" class="w-4 h-4 mr-2"></i> GitHub に Issue が作成された</li>
+                            <li class="flex items-center"><i data-lucide="circle" class="w-4 h-4 mr-2"></i> 各 Issue の内容を確認した</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Part 4: API開発 -->
+        <div class="step-content" id="step-4">
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <div class="flex items-center mb-4">
+                    <i data-lucide="code" class="w-6 h-6 text-blue-500 mr-2"></i>
+                    <h1 class="text-2xl font-bold">Part 4: TDD で API 開発（20分）</h1>
+                </div>
+                <p class="text-gray-600 mb-6">いよいよプログラミング開始です。AI が「テスト→実装→改善」のサイクルを高速で回してくれます。</p>
+                
+                <div class="space-y-6">
+                    <!-- 4.1 最初の作業開始 -->
+                    <div class="border-l-4 border-blue-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="play" class="w-5 h-5 mr-2"></i>
+                            4.1 最初の作業開始
+                        </h3>
+                        
+                        <p class="text-gray-600 mb-4">作成されたタスクから順番に取り組んでいきます。チャットで AI に伝えてください。</p>
+                        <div class="command-block">
+                            <pre class="language-text bg-gray-900 text-white p-4 rounded overflow-x-auto"><code>最初のタスク（Issue #1）を開始してください</code></pre>
+                            <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="最初のタスク（Issue #1）を開始してください">
+                                <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="bg-blue-50 p-4 rounded mt-4">
+                            <h4 class="font-semibold mb-2 flex items-center">
+                                <i data-lucide="info" class="w-4 h-4 mr-1"></i>
+                                TDD ワークフローについて
+                            </h4>
+                            <p class="text-sm">AI は「テスト→実装→改善」のサイクルを自動で回します。複数のタスクがありますが、1つずつ順番に完了させていきます。各タスクで同じパターンを繰り返すことで、TDD の流れを体験できます。</p>
+                        </div>
+                        
+                        <div class="bg-yellow-50 p-4 rounded mt-4">
+                            <h4 class="font-semibold mb-2 flex items-center">
+                                <i data-lucide="alert-triangle" class="w-4 h-4 mr-1"></i>
+                                重要
+                            </h4>
+                            <p class="text-sm">AI が各作業ステップで「Run」ボタンを表示します。内容を確認してクリックしてください。</p>
+                        </div>
+                    </div>
+
+                    <!-- 4.2 AI の提案を承認しよう -->
+                    <div class="border-l-4 border-green-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i>
+                            4.2 AI の提案を承認しよう
+                        </h3>
+                        
+                        <p class="text-gray-600 mb-4">AI がコード修正を提案してきたら、適切に承認していきましょう。</p>
+                        
+                        <div class="bg-blue-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2 flex items-center">
+                                <i data-lucide="file-edit" class="w-4 h-4 mr-1"></i>
+                                チャットパネルでの承認
+                            </h4>
+                            <ul class="text-sm space-y-1">
+                                <li>• AI がファイル作成・編集を提案</li>
+                                <li>• チャットパネル内の「<strong>✓</strong>」アイコンをクリック → 承認</li>
+                                <li>• 問題があれば「<strong>×</strong>」アイコンをクリック → 拒否</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-green-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2 flex items-center">
+                                <i data-lucide="monitor" class="w-4 h-4 mr-1"></i>
+                                エディタ画面での承認
+                            </h4>
+                            <ul class="text-sm space-y-1">
+                                <li>• エディタ画面で変更内容をプレビュー表示</li>
+                                <li>• 画面下部の「<strong>Accept file</strong>」ボタンをクリック → 承認</li>
+                                <li>• 問題があれば「<strong>Reject file</strong>」ボタンをクリック → 拒否</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-yellow-50 p-4 rounded">
+                            <h4 class="font-semibold mb-2 flex items-center">
+                                <i data-lucide="lightbulb" class="w-4 h-4 mr-1"></i>
+                                承認のコツ
+                            </h4>
+                            <ul class="text-sm space-y-1">
+                                <li>• <strong>どちらの方法でも同じ結果</strong>：チャットパネルとエディタ、どちらを使ってもOK</li>
+                                <li>• <strong>複数ファイルの場合</strong>：「Review next file」で順番に確認</li>
+                                <li>• <strong>迷った時</strong>：内容を確認してわからなければAIに質問しよう</li>
+                                <li>• <strong>AIの動作が変な時</strong>：「t-wada氏ならこのケースどうするか」と聞いてみよう</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 4.3 タスク完了とワークフロー継続 -->
+                    <div class="border-l-4 border-purple-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="check-square" class="w-5 h-5 mr-2"></i>
+                            4.3 タスク完了とワークフロー継続
+                        </h3>
+                        
+                        <div class="bg-green-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2 flex items-center">
+                                <i data-lucide="check-circle" class="w-4 h-4 mr-1"></i>
+                                Step 1: タスク完了の報告
+                            </h4>
+                            <p class="text-sm mb-2">各タスクが完了したら、チャットで伝えてください。</p>
+                            <div class="command-block">
+                                <pre class="language-text bg-gray-900 text-white p-3 rounded overflow-x-auto text-sm"><code>このタスクが完了しました。PR を作成してください。</code></pre>
+                                <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="このタスクが完了しました。PR を作成してください。">
+                                    <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-blue-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2 flex items-center">
+                                <i data-lucide="git-pull-request" class="w-4 h-4 mr-1"></i>
+                                Step 2: PR 管理の対応
+                            </h4>
+                            <p class="text-sm mb-2">AI の PR 作成後の対応は、状況に応じて臨機応変に行います。</p>
+                            <ul class="text-sm space-y-1 ml-4">
+                                <li>• <strong>PR 作成のみ</strong>：「レビュー待ち」として次のタスクへ進む</li>
+                                <li>• <strong>自動マージ</strong>：AI が適切と判断した場合、自動でマージ</li>
+                                <li>• <strong>レビュー要求</strong>：AI がレビューが必要と判断した場合は指示に従う</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-purple-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2 flex items-center">
+                                <i data-lucide="arrow-right" class="w-4 h-4 mr-1"></i>
+                                Step 3: 次のタスクへ継続
+                            </h4>
+                            <p class="text-sm mb-2">PR 対応完了後、次のタスクに進みます。</p>
+                            <div class="command-block">
+                                <pre class="language-text bg-gray-900 text-white p-3 rounded overflow-x-auto text-sm"><code>次のタスク（Issue #X）を開始してください</code></pre>
+                                <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="次のタスク（Issue #X）を開始してください">
+                                    <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-600 mt-2">※ #X は実際のIssue番号に置き換えてください。</p>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-4 rounded">
+                            <h4 class="font-semibold mb-2 flex items-center">
+                                <i data-lucide="target" class="w-4 h-4 mr-1"></i>
+                                進捗確認
+                            </h4>
+                            <p class="text-sm">すべてのAPI開発タスクを完了するまで、Step 1-3 を繰り返します。GitHub の Issues ページで進捗を随時確認できます。</p>
+                        </div>
+                    </div>
+
+                    <!-- チェックポイント -->
+                    <div class="bg-green-50 border border-green-200 rounded p-4">
+                        <div class="flex items-center mb-2">
+                            <i data-lucide="check-circle" class="w-5 h-5 text-green-600 mr-2"></i>
+                            <h4 class="font-semibold text-green-800">チェックポイント</h4>
+                        </div>
+                        <ul class="space-y-1 text-sm text-green-700">
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> TDD ワークフローを理解した</li>
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> 最初のタスクを開始できた</li>
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> テストが実行できた</li>
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> PR が作成された</li>
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> 複数タスクの継続方法を理解した</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Part 5: UI開発 -->
+        <div class="step-content" id="step-5">
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <div class="flex items-center mb-4">
+                    <i data-lucide="palette" class="w-6 h-6 text-blue-500 mr-2"></i>
+                    <h1 class="text-2xl font-bold">Part 5: Web UI 開発（20分）</h1>
+                </div>
+                <p class="text-gray-600 mb-6">画面を作ってみましょう。AI がデザイナー＋エンジニアとして、画面の設計から実装まで担当してくれます。</p>
+                
+                <div class="space-y-6">
+                    <!-- 5.1 画面の設計検討 -->
+                    <div class="border-l-4 border-blue-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="layout" class="w-5 h-5 mr-2"></i>
+                            5.1 画面の設計検討
+                        </h3>
+                        
+                        <p class="text-gray-600 mb-4">チャットで以下を送信してください。</p>
+                        <div class="command-block">
+                            <pre class="language-text bg-gray-900 text-white p-4 rounded overflow-x-auto"><code>商品管理 API を使った Web 画面を、Streamlit で作りたいです。
+
+あなたは経験豊富なプロダクトマネージャーとして、
+どんな画面や機能があると便利か、アイデアを提案してください。
+
+ユーザーは商品の在庫を管理する会社の担当者です。
+初心者でも使いやすい画面にしたいです。</code></pre>
+                            <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="商品管理 API を使った Web 画面を、Streamlit で作りたいです。&#10;&#10;あなたは経験豊富なプロダクトマネージャーとして、&#10;どんな画面や機能があると便利か、アイデアを提案してください。&#10;&#10;ユーザーは商品の在庫を管理する会社の担当者です。&#10;初心者でも使いやすい画面にしたいです。">
+                                <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 5.2 実装仕様書の作成 -->
+                    <div class="border-l-4 border-green-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="file-text" class="w-5 h-5 mr-2"></i>
+                            5.2 実装仕様書の作成
+                        </h3>
+                        
+                        <div class="bg-yellow-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2 flex items-center">
+                                <i data-lucide="clock" class="w-4 h-4 mr-1"></i>
+                                時間効率化のポイント
+                            </h4>
+                            <p class="text-sm">ワークショップの時間内で完成させるため、<strong>実装済みのAPI機能のみ</strong>を使った UI を設計します。新しい API 機能は追加せず、既存の機能で実現できる範囲に絞ります。</p>
+                        </div>
+                        
+                        <p class="text-gray-600 mb-4">実装済みの API を確認してから UI を設計してもらいましょう。</p>
+                        <div class="command-block">
+                            <pre class="language-text bg-gray-900 text-white p-4 rounded overflow-x-auto"><code>@api/ ディレクトリの実装済みAPIを確認して、これらの機能だけを使った商品管理UIの仕様書を作成してください。
+
+以下の条件でお願いします：
+- 実装済みのAPIエンドポイントのみ使用
+- 新しいAPI機能は追加しない
+- docs/ui-design.md として仕様書を保存
+- Streamlitでの実装を前提とした設計
+- ワークショップ時間内（20分）で実装可能な範囲に限定
+
+ユーザーは商品在庫管理の担当者で、初心者でも使いやすい画面が必要です。</code></pre>
+                            <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="@api/ ディレクトリの実装済みAPIを確認して、これらの機能だけを使った商品管理UIの仕様書を作成してください。&#10;&#10;以下の条件でお願いします：&#10;- 実装済みのAPIエンドポイントのみ使用&#10;- 新しいAPI機能は追加しない&#10;- docs/ui-design.md として仕様書を保存&#10;- Streamlitでの実装を前提とした設計&#10;- ワークショップ時間内（20分）で実装可能な範囲に限定&#10;&#10;ユーザーは商品在庫管理の担当者で、初心者でも使いやすい画面が必要です。">
+                                <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="bg-blue-50 p-4 rounded mt-4">
+                            <h4 class="font-semibold mb-2 flex items-center">
+                                <i data-lucide="info" class="w-4 h-4 mr-1"></i>
+                                設計のポイント
+                            </h4>
+                            <ul class="text-sm space-y-1">
+                                <li>• <strong>API制約の確認</strong>：利用可能なエンドポイントを正確に把握</li>
+                                <li>• <strong>MVP思考</strong>：最小限の機能で最大の価値を提供</li>
+                                <li>• <strong>実装時間の考慮</strong>：20分で実現可能な機能に絞り込み</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 5.3 UI開発もIssue駆動で進める -->
+                    <div class="border-l-4 border-purple-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="list-todo" class="w-5 h-5 mr-2"></i>
+                            5.3 UI開発もIssue駆動で進める
+                        </h3>
+                        
+                        <p class="text-gray-600 mb-4">作成された仕様書を基に、UI開発のタスク分觢を依頼します。</p>
+                        <div class="command-block">
+                            <pre class="language-text bg-gray-900 text-white p-4 rounded overflow-x-auto"><code>@docs/ui-design.md
+
+この設計書を基に、UI開発のタスクを分解してください。
+各タスクは15-30分で完了できる小さな作業にしてください。
+
+重要：実装済みAPI機能のみを使用し、ワークショップ時間内で完成させることを最優先にしてください。
+
+例：
+- Task 1: Streamlitアプリの基本構造作成
+- Task 2: 商品入力フォームの実装
+- Task 3: 商品一覧表示の実装
+- Task 4: API接続と統合テスト</code></pre>
+                            <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="@docs/ui-design.md&#10;&#10;この設計書を基に、UI開発のタスクを分解してください。&#10;各タスクは15-30分で完了できる小さな作業にしてください。&#10;&#10;例：&#10;- Task 1: Streamlitアプリの基本構造作成&#10;- Task 2: 商品入力フォームの実装&#10;- Task 3: 商品一覧表示の実装&#10;- Task 4: API接続と統合テスト">
+                                <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        
+                        <p class="text-gray-600 mt-4 mb-2">タスク内容を確認して良さそうだったら承認してください。</p>
+                        <div class="command-block">
+                            <pre class="language-text bg-gray-900 text-white p-4 rounded overflow-x-auto"><code>ok、GitHubにIssueとして登録してください</code></pre>
+                            <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="ok、GitHubにIssueとして登録してください">
+                                <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 5.4 Playwright E2Eテスト戦略の策定 -->
+                    <div class="border-l-4 border-indigo-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="globe" class="w-5 h-5 mr-2"></i>
+                            5.4 Playwright E2Eテスト戦略の策定（時間に余裕がある場合）
+                        </h3>
+                        
+                        <div class="bg-blue-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2 flex items-center">
+                                <i data-lucide="info" class="w-4 h-4 mr-1"></i>
+                                時間効率化のポイント
+                            </h4>
+                            <p class="text-sm">ワークショップの残り時間に応じて、Playwright MCPを使ったE2Eテストを追加実装します。従来のStreamlit手動テストに加えて、ブラウザ自動化による回帰テストを体験できます。</p>
+                        </div>
+                        
+                        <p class="text-gray-600 mb-4">E2Eテストシナリオの策定をAIに依頼します。</p>
+                        <div class="command-block">
+                            <pre class="language-text bg-gray-900 text-white p-4 rounded overflow-x-auto"><code>Playwright MCPを使って、商品管理UIのE2Eテストシナリオを作成してください。
+
+以下のユーザージャーニーをテストしたいです：
+1. ブラウザでStreamlitアプリを開く
+2. 商品名「テスト商品」、価格「999」を入力
+3. 「商品を登録」ボタンをクリック
+4. 登録成功メッセージの確認
+5. 商品一覧に新しい商品が表示されることを確認
+
+API: http://localhost:8080（事前起動）
+UI: http://localhost:8501（事前起動）
+
+テストコードの形式は問いません。AIとの対話でPlaywright機能を体験したいです。</code></pre>
+                            <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="Playwright MCPを使って、商品管理UIのE2Eテストシナリオを作成してください。&#10;&#10;以下のユーザージャーニーをテストしたいです：&#10;1. ブラウザでStreamlitアプリを開く&#10;2. 商品名「テスト商品」、価格「999」を入力&#10;3. 「商品を登録」ボタンをクリック&#10;4. 登録成功メッセージの確認&#10;5. 商品一覧に新しい商品が表示されることを確認&#10;&#10;API: http://localhost:8080（事前起動）&#10;UI: http://localhost:8501（事前起動）&#10;&#10;テストコードの形式は問いません。AIとの対話でPlaywright機能を体験したいです。">
+                                <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="bg-purple-50 p-4 rounded mt-4">
+                            <h4 class="font-semibold mb-2 flex items-center">
+                                <i data-lucide="zap" class="w-4 h-4 mr-1"></i>
+                                Playwright MCPの体験ポイント
+                            </h4>
+                            <ul class="text-sm space-y-1">
+                                <li>• <strong>ブラウザ自動化</strong>：手動テストの自動化を体験</li>
+                                <li>• <strong>スクリーンショット</strong>：テスト実行時の画面キャプチャ</li>
+                                <li>• <strong>アクセシビリティツリー</strong>：構造化された画面情報の取得</li>
+                                <li>• <strong>決定論的操作</strong>：AIによる正確なUI操作の指示</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 5.5 統合TDDサイクルの実践 -->
+                    <div class="border-l-4 border-cyan-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="repeat" class="w-5 h-5 mr-2"></i>
+                            5.5 統合TDDサイクルの実践（時間に余裕がある場合）
+                        </h3>
+                        
+                        <div class="bg-green-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2">Step 1: API + UI同時起動</h4>
+                            <p class="text-sm mb-2">2つのターミナルで並行実行します。</p>
+                            <div class="space-y-2">
+                                <div class="command-block">
+                                    <pre class="language-bash bg-gray-900 text-white p-3 rounded overflow-x-auto text-sm"><code># ターミナル1: API起動
+cd api && uv run uvicorn main:app --reload --port 8080</code></pre>
+                                    <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="cd api && uv run uvicorn main:app --reload --port 8080">
+                                        <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                                <div class="command-block">
+                                    <pre class="language-bash bg-gray-900 text-white p-3 rounded overflow-x-auto text-sm"><code># ターミナル2: UI起動
+cd ui && uv run streamlit run main.py --server.port 8501</code></pre>
+                                    <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="cd ui && uv run streamlit run main.py --server.port 8501">
+                                        <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-blue-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2">Step 2: Playwrightテスト実行</h4>
+                            <p class="text-sm mb-2">チャットでAIに以下を指示してください。</p>
+                            <div class="command-block">
+                                <pre class="language-text bg-gray-900 text-white p-3 rounded overflow-x-auto text-sm"><code>先ほど策定したE2Eテストシナリオを実行してください。
+ブラウザで実際に操作して、商品登録→一覧表示のフローをテストしてください。</code></pre>
+                                <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="先ほど策定したE2Eテストシナリオを実行してください。&#10;ブラウザで実際に操作して、商品登録→一覧表示のフローをテストしてください。">
+                                    <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-purple-50 p-4 rounded">
+                            <h4 class="font-semibold mb-2">Step 3: 回帰テストの自動化</h4>
+                            <p class="text-sm mb-2">継続的なテスト実行の設定をします。</p>
+                            <div class="command-block">
+                                <pre class="language-text bg-gray-900 text-white p-3 rounded overflow-x-auto text-sm"><code>このE2Eテストを、コード変更時に自動実行される回帰テストにしてください。
+GitHub Actionsでの実行設定について教えてください。</code></pre>
+                                <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="このE2Eテストを、コード変更時に自動実行される回帰テストにしてください。&#10;GitHub Actionsでの実行設定について教えてください。">
+                                    <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5.6 最終確認（従来の5.4から変更） -->
+                    <div class="border-l-4 border-orange-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="mouse-pointer-click" class="w-5 h-5 mr-2"></i>
+                            5.6 最終確認
+                        </h3>
+                        
+                        <div class="bg-yellow-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2">手動テスト（必須）</h4>
+                            <p class="text-sm mb-2">全てのIssueが完了したら、画面アプリを起動します。</p>
+                            <div class="command-block">
+                                <pre class="language-bash bg-gray-900 text-white p-3 rounded overflow-x-auto text-sm"><code># 画面アプリを起動（最終確認用）
+cd ui && uv run streamlit run main.py</code></pre>
+                                <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="cd ui && uv run streamlit run main.py">
+                                    <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                            <p class="text-sm mt-2">ブラウザで <a href="http://localhost:8501" class="text-blue-600 underline" target="_blank">http://localhost:8501</a> にアクセスして目視確認してください。</p>
+                        </div>
+                        
+                        <div class="bg-green-50 p-4 rounded">
+                            <h4 class="font-semibold mb-2">E2Eテスト（時間に余裕がある場合）</h4>
+                            <p class="text-sm">Playwright MCPによる自動テストで、手動テストでは発見しにくい問題も検出できます。</p>
+                        </div>
+                    </div>
+
+                    <!-- チェックポイント -->
+                    <div class="bg-green-50 border border-green-200 rounded p-4">
+                        <div class="flex items-center mb-2">
+                            <i data-lucide="check-circle" class="w-5 h-5 text-green-600 mr-2"></i>
+                            <h4 class="font-semibold text-green-800">チェックポイント</h4>
+                        </div>
+                        <ul class="space-y-1 text-sm text-green-700">
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> UI設計のアイデア検討が完了した</li>
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> UI仕様書（docs/ui-design.md）が作成された</li>
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> UIタスクがIssueに登録された</li>
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> Streamlitアプリが動作する</li>
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> （オプション）Playwright E2Eテストを体験した</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Part 6: Cloud Runデプロイ -->
+        <div class="step-content" id="step-6">
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <div class="flex items-center mb-4">
+                    <i data-lucide="cloud" class="w-6 h-6 text-blue-500 mr-2"></i>
+                    <h1 class="text-2xl font-bold">Part 6: Cloud Run デプロイ（10分）</h1>
+                </div>
+                <p class="text-gray-600 mb-6">クラウド環境で公開しましょう。AI がクラウドの設定からデプロイまで、プロレベルの作業を自動化してくれます。</p>
+                
+                <div class="space-y-6">
+                    <!-- 6.1 セキュアな認証の準備 -->
+                    <div class="border-l-4 border-blue-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="shield-check" class="w-5 h-5 mr-2"></i>
+                            6.1 セキュアな認証の準備（3分）
+                        </h3>
+                        
+                        <div class="bg-blue-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2">Step 1: プロジェクトIDの設定</h4>
+                            <div class="command-block">
+                                <pre class="language-bash bg-gray-900 text-white p-4 rounded overflow-x-auto"><code># あなたのGoogle CloudプロジェクトIDを設定
+export PROJECT_ID="your-project-id"
+gcloud config set project $PROJECT_ID</code></pre>
+                                <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="export PROJECT_ID=&quot;your-project-id&quot;&#10;gcloud config set project $PROJECT_ID">
+                                    <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-yellow-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2">Step 1.5: IAM APIの有効化</h4>
+                            <p class="text-sm mb-2">サービスアカウント作成前に、IAM APIを有効化してください。</p>
+                            <div class="command-block">
+                                <pre class="language-bash bg-gray-900 text-white p-4 rounded overflow-x-auto"><code># IAM APIを有効化
+gcloud services enable iam.googleapis.com</code></pre>
+                                <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="gcloud services enable iam.googleapis.com">
+                                    <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-green-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2">Step 2: サービスアカウントの作成</h4>
+                            <div class="command-block">
+                                <pre class="language-bash bg-gray-900 text-white p-4 rounded overflow-x-auto"><code># サービスアカウントを作成
+gcloud iam service-accounts create cursor-workshop-app \
+    --display-name="Cursor Workshop Application Service Account"</code></pre>
+                                <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="gcloud iam service-accounts create cursor-workshop-app \&#10;    --display-name=&quot;Cursor Workshop Application Service Account&quot;">
+                                    <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-orange-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2">Step 3: 必要な権限を付与</h4>
+                            <p class="text-sm mb-2">作業に必要な権限を3つ付与します。</p>
+                            <div class="command-block">
+                                <pre class="language-bash bg-gray-900 text-white p-4 rounded overflow-x-auto"><code># Cloud Run管理者権限（アプリをデプロイするため）
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:cursor-workshop-app@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --role="roles/run.admin"
+
+# サービスアカウント使用権限（サービスとして動作するため）
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:cursor-workshop-app@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --role="roles/iam.serviceAccountUser"
+
+# ビルド実行権限（コンテナイメージを作成するため）
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:cursor-workshop-app@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --role="roles/cloudbuild.builds.builder"</code></pre>
+                                <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="gcloud projects add-iam-policy-binding $PROJECT_ID \&#10;    --member=&quot;serviceAccount:cursor-workshop-app@${PROJECT_ID}.iam.gserviceaccount.com&quot; \&#10;    --role=&quot;roles/run.admin&quot;&#10;&#10;gcloud projects add-iam-policy-binding $PROJECT_ID \&#10;    --member=&quot;serviceAccount:cursor-workshop-app@${PROJECT_ID}.iam.gserviceaccount.com&quot; \&#10;    --role=&quot;roles/iam.serviceAccountUser&quot;&#10;&#10;gcloud projects add-iam-policy-binding $PROJECT_ID \&#10;    --member=&quot;serviceAccount:cursor-workshop-app@${PROJECT_ID}.iam.gserviceaccount.com&quot; \&#10;    --role=&quot;roles/cloudbuild.builds.builder&quot;">
+                                    <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-blue-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2">Step 4: インパーソネーション権限の設定</h4>
+                            <p class="text-sm mb-2">あなたが専用アカウントを「使える」ようにします。</p>
+                            <div class="command-block">
+                                <pre class="language-bash bg-gray-900 text-white p-4 rounded overflow-x-auto"><code># あなたのメールアドレスを確認
+gcloud config get-value account
+
+# インパーソネーション権限を付与
+gcloud iam service-accounts add-iam-policy-binding \
+    cursor-workshop-app@$PROJECT_ID.iam.gserviceaccount.com \
+    --member="user:$(gcloud config get-value account)" \
+    --role="roles/iam.serviceAccountTokenCreator"</code></pre>
+                                <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="gcloud config get-value account&#10;&#10;gcloud iam service-accounts add-iam-policy-binding \&#10;    cursor-workshop-app@$PROJECT_ID.iam.gserviceaccount.com \&#10;    --member=&quot;user:$(gcloud config get-value account)&quot; \&#10;    --role=&quot;roles/iam.serviceAccountTokenCreator&quot;">
+                                    <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-purple-50 p-4 rounded">
+                            <h4 class="font-semibold mb-2">Step 5: 認証の実行</h4>
+                            <div class="command-block">
+                                <pre class="language-bash bg-gray-900 text-white p-4 rounded overflow-x-auto"><code># サービスアカウントを使って認証
+gcloud auth application-default login \
+  --impersonate-service-account=cursor-workshop-app@$PROJECT_ID.iam.gserviceaccount.com</code></pre>
+                                <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="gcloud auth application-default login \&#10;  --impersonate-service-account=cursor-workshop-app@$PROJECT_ID.iam.gserviceaccount.com">
+                                    <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 6.2 AIによる自動デプロイ -->
+                    <div class="border-l-4 border-purple-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="bot" class="w-5 h-5 mr-2"></i>
+                            6.2 AIによる自動デプロイ（5分）
+                        </h3>
+                        
+                        <div class="bg-purple-50 p-4 rounded mb-4">
+                            <p class="font-semibold text-purple-800 mb-2">AIがすべて自動化してくれます。</p>
+                            <p class="text-sm text-gray-700">面倒な設定ファイル作成やコード修正は一切不要。AIに依頼するだけで完了します。</p>
+                        </div>
+                        
+                        <div class="bg-blue-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2">Step 1: AIにデプロイを依頼</h4>
+                            <p class="text-sm mb-2">Cursorのチャットで以下のメッセージを送信してください。</p>
+                            <div class="command-block">
+                                <pre class="language-text bg-gray-900 text-white p-4 rounded overflow-x-auto"><code>APIをCloud Runにデプロイしてください。
+以下の設定でお願いします：
+
+- リージョン: asia-northeast1（東京）
+- サービス名: product-api
+- 認証なしで公開アクセス可能に設定
+
+必要なファイル作成やインポート修正も含めて、全て自動でお願いします。</code></pre>
+                                <button class="copy-button bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors" data-copy="APIをCloud Runにデプロイしてください。&#10;以下の設定でお願いします：&#10;&#10;- リージョン: asia-northeast1（東京）&#10;- サービス名: product-api&#10;- 認証なしで公開アクセス可能に設定&#10;&#10;必要なファイル作成やインポート修正も含めて、全て自動でお願いします。">
+                                    <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-green-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2">Step 2: AIの自動作業を確認</h4>
+                            <p class="text-sm mb-2">AIが以下の作業を自動で実行してくれます。</p>
+                            <ul class="text-sm space-y-1">
+                                <li><i data-lucide="check-circle" class="w-4 h-4 mr-2 inline"></i> 必要ファイル作成（__init__.py, requirements.txt, Procfile）</li>
+                                <li><i data-lucide="check-circle" class="w-4 h-4 mr-2 inline"></i> インポートパス修正（相対→絶対インポート）</li>
+                                <li><i data-lucide="check-circle" class="w-4 h-4 mr-2 inline"></i> Cloud Runへのデプロイ実行</li>
+                                <li><i data-lucide="check-circle" class="w-4 h-4 mr-2 inline"></i> 動作確認用URLの提供</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-orange-50 p-4 rounded">
+                            <h4 class="font-semibold mb-2">Step 3: 承認とチェック</h4>
+                            <p class="text-sm mb-2">AIから以下の確認があった場合の対応です。</p>
+                            <ul class="text-sm space-y-1">
+                                <li>• <strong>「ファイルを作成しますか」</strong> → 「はい」</li>
+                                <li>• <strong>「コードを修正しますか」</strong> → 「お願いします」</li>
+                                <li>• <strong>「デプロイを実行しますか」</strong> → 「実行してください」</li>
+                            </ul>
+                            <p class="text-sm mt-2 text-blue-600">💡 AIが自動で最適な設定を選択してくれます。</p>
+                        </div>
+                    </div>
+
+                    <!-- 6.3 デプロイ完了の確認 -->
+                    <div class="border-l-4 border-green-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="check-circle-2" class="w-5 h-5 mr-2"></i>
+                            6.3 デプロイ完了の確認（2分）
+                        </h3>
+                        
+                        <div class="bg-green-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2">AIのデプロイ完了待ち</h4>
+                            <p class="text-sm mb-2">AIが作業を完了すると、以下のようなメッセージが表示されます。</p>
+                            <div class="bg-white p-3 rounded border-l-4 border-green-500">
+                                <p class="text-sm font-mono">デプロイが完了しました。<br>
+                                URL: https://product-api-xxxxx.a.run.app</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-blue-50 p-4 rounded">
+                            <h4 class="font-semibold mb-2">成功体験を味わおう</h4>
+                            <p class="text-sm mb-2">この瞬間、あなたは以下を達成しました。</p>
+                            <ul class="text-sm space-y-1">
+                                <li>• 🌍 <strong>グローバル公開</strong>：世界中からアクセス可能なAPI</li>
+                                <li>• 🏢 <strong>企業レベル</strong>：プロが使うインフラで動作</li>
+                                <li><i data-lucide="zap" class="w-4 h-4 mr-2 inline"></i> <strong>自動スケール</strong>：負荷に応じて自動拡張</li>
+                                <li>• 🔒 <strong>HTTPS完備</strong>：安全な通信で保護</li>
+                            </ul>
+                            <p class="text-sm mt-2 font-semibold text-blue-700">「1.5時間で本格的なクラウドAPIを構築」という実績です。</p>
+                        </div>
+                    </div>
+
+                    <!-- 6.4 本番環境での動作確認 -->
+                    <div class="border-l-4 border-purple-500 pl-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center">
+                            <i data-lucide="globe" class="w-5 h-5 mr-2"></i>
+                            6.4 本番環境での動作確認（1分）
+                        </h3>
+                        
+                        <div class="bg-blue-50 p-4 rounded mb-4">
+                            <h4 class="font-semibold mb-2">Swagger UIでAPIを試そう</h4>
+                            <p class="text-sm mb-2">ブラウザで以下のURLを開いてください（AIが教えてくれたURLの末尾に/docsを追加）。</p>
+                            <div class="bg-white p-3 rounded border-l-4 border-blue-500">
+                                <p class="text-sm font-mono">https://product-api-xxxxx.a.run.app/docs</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-green-50 p-4 rounded">
+                            <h4 class="font-semibold mb-2">🎉 完成お披露目タイム</h4>
+                            <p class="text-sm mb-2">以下の操作で本格的なAPIの動作を確認してください。</p>
+                            <ul class="text-sm space-y-1">
+                                <li>• <strong>POST /items</strong>：新しい商品を登録してみる</li>
+                                <li>• <strong>GET /items/{id}</strong>：登録した商品を確認してみる</li>
+                                <li>• <strong>GET /health</strong>：ヘルスチェックで動作確認</li>
+                            </ul>
+                            <p class="text-sm mt-3 font-semibold text-green-700">友達にURLを送って見せてあげましょう。</p>
+                        </div>
+                    </div>
+
+                    <!-- チェックポイント -->
+                    <div class="bg-green-50 border border-green-200 rounded p-4">
+                        <div class="flex items-center mb-2">
+                            <i data-lucide="check-circle" class="w-5 h-5 text-green-600 mr-2"></i>
+                            <h4 class="font-semibold text-green-800">チェックポイント</h4>
+                        </div>
+                        <ul class="space-y-1 text-sm text-green-700">
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> Google Cloud認証が完了した</li>
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> AIがAPIをCloud Runにデプロイしてくれた</li>
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> Swagger UIで本番環境のAPIを操作できた</li>
+                            <li class="flex items-center"><input type="checkbox" class="mr-2"> 世界中からアクセス可能なAPIが完成した</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ナビゲーション -->
+    <nav class="fixed bottom-0 w-full bg-white shadow-lg border-t z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <button id="prev-btn" class="nav-button flex items-center px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors" disabled>
+                <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i>
+                前へ
+            </button>
+            
+            <div class="flex items-center space-x-2">
+                <span class="text-sm text-gray-500">Part</span>
+                <div class="flex space-x-1">
+                    <div class="part-dot w-3 h-3 rounded-full bg-blue-500" data-part="1"></div>
+                    <div class="part-dot w-3 h-3 rounded-full bg-gray-300" data-part="2"></div>
+                    <div class="part-dot w-3 h-3 rounded-full bg-gray-300" data-part="3"></div>
+                    <div class="part-dot w-3 h-3 rounded-full bg-gray-300" data-part="4"></div>
+                    <div class="part-dot w-3 h-3 rounded-full bg-gray-300" data-part="5"></div>
+                    <div class="part-dot w-3 h-3 rounded-full bg-gray-300" data-part="6"></div>
+                </div>
+            </div>
+            
+            <button id="next-btn" class="nav-button flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                次へ
+                <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        // 初期化
+        lucide.createIcons();
+        
+        // 現在のステップ
+        let currentStep = 1;
+        const totalSteps = 6;
+        const startTime = Date.now();
+        const totalMinutes = 90;
+        
+        // パートの情報
+        const partInfo = {
+            1: { title: "環境構築", duration: 20 },
+            2: { title: "AI対話体験", duration: 5 },
+            3: { title: "Issue駆動開発", duration: 10 },
+            4: { title: "API開発", duration: 20 },
+            5: { title: "UI開発", duration: 20 },
+            6: { title: "Cloud Runデプロイ", duration: 10 }
+        };
+        
+        // DOM要素
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const currentPartElement = document.querySelector('.current-part');
+        const partTitleElement = document.querySelector('.part-title');
+        const progressBar = document.querySelector('.progress-bar');
+        const elapsedTimeElement = document.querySelector('.elapsed-time');
+        const remainingTimeElement = document.querySelector('.remaining-time');
+        
+        // ステップを更新
+        function updateStep(step) {
+            // コンテンツを切り替え
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === step) {
+                    content.classList.add('active');
+                }
+            });
+            
+            // パート情報を更新
+            currentPartElement.textContent = `Part ${step}/${totalSteps}`;
+            partTitleElement.textContent = partInfo[step].title;
+            
+            // 進捗バーを更新
+            const progress = (step - 1) / (totalSteps - 1) * 100;
+            progressBar.style.setProperty('--progress', `${progress}%`);
+            
+            // 進捗パーセンテージを更新
+            const progressPercentageElement = document.querySelector('.progress-percentage');
+            if (progressPercentageElement) {
+                progressPercentageElement.textContent = `${Math.round(progress)}%`;
+            }
+            
+            // パートドットを更新
+            document.querySelectorAll('.part-dot').forEach((dot, index) => {
+                if (index + 1 <= step) {
+                    dot.classList.remove('bg-gray-300');
+                    dot.classList.add('bg-blue-500');
+                } else {
+                    dot.classList.remove('bg-blue-500');
+                    dot.classList.add('bg-gray-300');
+                }
+            });
+            
+            // ナビゲーションボタンの状態
+            prevBtn.disabled = step === 1;
+            nextBtn.disabled = step === totalSteps;
+            
+            // LocalStorageに保存
+            localStorage.setItem('currentStep', step);
+            
+            // ページトップにスクロール
+            window.scrollTo(0, 0);
+        }
+        
+        // 時間を更新
+        function updateTime() {
+            const elapsed = Math.floor((Date.now() - startTime) / 60000);
+            const remaining = Math.max(0, totalMinutes - elapsed);
+            
+            elapsedTimeElement.textContent = `${elapsed}分経過`;
+            remainingTimeElement.textContent = `${remaining}分残`;
+        }
+        
+        // コピー機能
+        document.addEventListener('click', async (e) => {
+            if (e.target.closest('.copy-button')) {
+                const button = e.target.closest('.copy-button');
+                const textToCopy = button.dataset.copy;
+                
+                try {
+                    await navigator.clipboard.writeText(textToCopy);
+                    
+                    // 成功フィードバック
+                    const originalClasses = button.className;
+                    button.className = button.className.replace('bg-blue-500 hover:bg-blue-600', 'copy-success');
+                    button.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i>';
+                    
+                    setTimeout(() => {
+                        button.className = originalClasses;
+                        button.innerHTML = '<i data-lucide="clipboard-copy" class="w-4 h-4"></i>';
+                        lucide.createIcons();
+                    }, 2000);
+                } catch (err) {
+                    console.error('コピーに失敗しました:', err);
+                    // フォールバック: テキストエリアを使用
+                    const textarea = document.createElement('textarea');
+                    textarea.value = textToCopy;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                }
+            }
+        });
+        
+        // ナビゲーション
+        prevBtn.addEventListener('click', () => {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStep(currentStep);
+            }
+        });
+        
+        nextBtn.addEventListener('click', () => {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateStep(currentStep);
+            }
+        });
+        
+        // パートドットクリック
+        document.querySelectorAll('.part-dot').forEach((dot, index) => {
+            dot.addEventListener('click', () => {
+                currentStep = index + 1;
+                updateStep(currentStep);
+            });
+            dot.style.cursor = 'pointer';
+        });
+        
+        // キーボードナビゲーション
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' && currentStep > 1) {
+                currentStep--;
+                updateStep(currentStep);
+            } else if (e.key === 'ArrowRight' && currentStep < totalSteps) {
+                currentStep++;
+                updateStep(currentStep);
+            }
+        });
+        
+        // 折りたたみ機能
+        document.addEventListener('click', (e) => {
+            const toggleBtn = e.target.closest('.cursor-settings-toggle');
+            if (toggleBtn) {
+                const content = toggleBtn.nextElementSibling;
+                const icon = toggleBtn.querySelector('.cursor-settings-icon');
+                
+                if (content.classList.contains('hidden')) {
+                    content.classList.remove('hidden');
+                    icon.style.transform = 'rotate(180deg)';
+                } else {
+                    content.classList.add('hidden');
+                    icon.style.transform = 'rotate(0deg)';
+                }
+            }
+            
+            // Volta環境変数設定の折りたたみ機能
+            const voltaToggleBtn = e.target.closest('.volta-env-toggle');
+            if (voltaToggleBtn) {
+                const content = voltaToggleBtn.nextElementSibling;
+                const icon = voltaToggleBtn.querySelector('.volta-env-icon');
+                
+                if (content.classList.contains('hidden')) {
+                    content.classList.remove('hidden');
+                    icon.style.transform = 'rotate(180deg)';
+                } else {
+                    content.classList.add('hidden');
+                    icon.style.transform = 'rotate(0deg)';
+                }
+            }
+        });
+        
+        // 初期化
+        const savedStep = localStorage.getItem('currentStep');
+        if (savedStep) {
+            currentStep = parseInt(savedStep);
+        }
+        updateStep(currentStep);
+        updateTime();
+        
+        // 1分ごとに時間を更新
+        setInterval(updateTime, 60000);
+        
+        // 進捗保存
+        window.addEventListener('beforeunload', () => {
+            localStorage.setItem('workshopProgress', JSON.stringify({
+                currentStep: currentStep,
+                startTime: startTime
+            }));
+        });
+    </script>
+</body>
+</html>

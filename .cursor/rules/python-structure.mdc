@@ -1,0 +1,253 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Pythonプロジェクト構造ガイドライン
+
+## 推奨構造：分離デプロイレイアウト
+
+このプロジェクトでは、Cloud Runでの分離デプロイを前提とした構造を採用します。
+APIとUIを独立したサービスとして開発・デプロイするためのマイクロサービス指向の設計です。
+
+### 基本構造
+
+```
+cursor-workshop-template/
+├── api/                    # FastAPI アプリケーション
+│   ├── pyproject.toml      # API専用の最小依存関係
+│   ├── main.py             # FastAPIエントリーポイント
+│   ├── models.py           # データモデル
+│   └── storage.py          # ビジネスロジック
+├── ui/                     # Streamlit アプリケーション
+│   ├── pyproject.toml      # UI専用の最小依存関係
+│   └── main.py             # Streamlitエントリーポイント
+├── tests/                  # テストコード
+│   ├── __init__.py
+│   ├── api/                # API用テスト
+│   └── ui/                 # UI用テスト
+├── docs/                   # ドキュメント
+├── .github/                # CI/CDワークフロー
+│   └── workflows/
+├── .gitignore
+├── pyproject.toml          # 開発・テスト用統合環境
+├── LICENSE                 # ライセンスファイル
+└── README.md
+```
+
+## なぜ分離デプロイレイアウト？
+
+### 技術的な利点
+
+1. **独立したデプロイ単位**
+   - APIとUIを個別にデプロイ・スケーリング可能
+   - 異なるリソース要件に対応（APIは計算重視、UIは軽量）
+   - 片方のサービスに問題があっても他方に影響しない
+
+2. **依存関係の最小化**
+   - 各サービスに必要な最小限の依存関係のみを含める
+   - Docker イメージサイズの削減
+   - セキュリティリスクの軽減
+
+3. **開発効率の向上**
+   - チーム間での並行開発が容易
+   - 技術スタックを個別に選択可能
+   - テストとデプロイを独立して実行
+
+### Cloud Run向けの設計
+
+- Cloud Run は各サービスを独立したコンテナとして実行
+- 各ディレクトリが独立したデプロイ単位となる
+- 最小限の依存関係により高速な起動時間を実現
+
+## 命名規則
+
+- **モジュール名**: 短く、lowercase、特殊記号（. や ? ）を避ける
+- **サービス名**: 目的に応じた明確な命名（api, ui）
+- **ファイル名**: `my.spam.py` のような形式は避ける
+- **クラス名**: CapWords（例: ProductModel）
+- **関数名**: lowercase_with_underscores（例: get_product_by_id）
+- **定数**: UPPERCASE_WITH_UNDERSCORES（例: MAX_ITEMS）
+
+## インポートの順序
+
+```python
+# 1. 標準ライブラリ
+import os
+import sys
+from datetime import datetime
+
+# 2. サードパーティライブラリ
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+# 3. ローカルアプリケーション（相対インポート）
+from .models import Product
+from .storage import InMemoryStorage
+```
+
+## モダンなパッケージ管理
+
+### 分離デプロイ用pyproject.toml構成
+
+#### ルート pyproject.toml（開発・テスト用）
+
+```toml
+[project]
+name = "cursor-workshop-template"
+version = "0.1.0"
+description = "Cursor ワークショップ - 商品管理API"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "httpx>=0.24.0",
+    "asgi-lifespan>=2.0.0",
+    "trio>=0.22.0",
+    "ruff>=0.1.0",
+    "pyright>=1.1.0",
+    "pre-commit>=3.0.0",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.pyright]
+pythonVersion = "3.12"
+strict = ["**"]
+```
+
+#### api/pyproject.toml（API専用）
+
+```toml
+[project]
+name = "product-api"
+version = "0.1.0"
+description = "商品管理 API"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.23.0",
+    "pydantic>=2.0.0",
+]
+```
+
+#### ui/pyproject.toml（UI専用）
+
+```toml
+[project]
+name = "product-ui"
+version = "0.1.0"
+description = "商品管理 UI"
+requires-python = ">=3.12"
+dependencies = [
+    "streamlit>=1.28.0",
+    "httpx>=0.24.0",
+    "pydantic>=2.0.0",
+]
+```
+
+### 推奨ツール
+
+1. **パッケージマネージャー**: uv（高速）、Poetry、PDM、Hatch
+2. **リンター/フォーマッター**: Ruff（flake8、black、isortの統合版）
+3. **型チェッカー**: mypy
+4. **テストフレームワーク**: pytest
+
+## 開発環境のセットアップ
+
+### 分離デプロイ構造での環境管理
+
+```bash
+# ルートで開発・テスト環境をセットアップ
+uv sync
+
+# 各サービス用の個別環境セットアップ
+cd api && uv sync && cd ..
+cd ui && uv sync && cd ..
+
+# API開発時
+cd api && uv run uvicorn main:app --reload
+
+# UI開発時  
+cd ui && uv run streamlit run main.py
+
+# テスト実行（常にルートから）
+uv run --frozen pytest tests/ -v
+```
+
+### Cloud Run デプロイ
+
+```bash
+# API デプロイ（api/ディレクトリを独立デプロイ）
+mcp__cloud-run__deploy_local_folder --folderPath="./api" --service="product-api"
+
+# UI デプロイ（ui/ディレクトリを独立デプロイ）
+mcp__cloud-run__deploy_local_folder --folderPath="./ui" --service="product-ui"
+```
+
+## テスト戦略
+
+分離デプロイ構造では、統合テストをルートから実行し、各サービスのテストを分離します：
+
+```bash
+# API テスト
+uv run --frozen pytest tests/api/ -v
+
+# UI テスト  
+uv run --frozen pytest tests/ui/ -v
+
+# 統合テスト
+uv run --frozen pytest tests/ -v
+```
+
+## 実践例
+
+### API サービス例
+
+```python
+# api/models.py
+from datetime import datetime
+from pydantic import BaseModel, Field
+
+class ProductModel(BaseModel):
+    """商品データモデル"""
+    id: int = Field(..., description="商品ID")
+    name: str = Field(..., min_length=1, description="商品名")
+    price: float = Field(..., gt=0, description="単価")
+    created_at: datetime = Field(default_factory=datetime.now)
+```
+
+```python
+# api/main.py
+from fastapi import FastAPI
+from .models import ProductModel
+from .storage import InMemoryStorage
+
+app = FastAPI(title="商品管理API")
+storage = InMemoryStorage()
+
+@app.post("/items", response_model=ProductModel, status_code=201)
+async def create_item(item: ProductModel) -> ProductModel:
+    return storage.create_product(item)
+```
+
+### 避けるべき例
+
+```python
+# models.py（サービスディレクトリの外）
+class product_model:  # クラス名が小文字
+    ProductName: str  # 変数名が大文字始まり
+```
+
+## まとめ
+
+- **分離デプロイ構造**でマイクロサービス指向の開発
+- **最小依存関係**で各サービスを軽量化
+- **独立デプロイ**でCloud Runに最適化
+- **統合テスト環境**でプロジェクト全体の品質保証
+- **モダンなツール**（uv、Ruff、pyright）を活用

@@ -1,0 +1,360 @@
+---
+description: 
+globs: tests/**/*.py
+alwaysApply: false
+---
+# テスト開発ガイドライン（t-wada方式TDD）
+
+## TDDの黄金律
+
+**実装コードを書く前に、必ず失敗するテストを書く。**
+
+t-wada氏が推奨するTDDの実践では、この原則を絶対に破ってはいけません。
+
+## TDDのサイクル
+
+### 1. Red（失敗するテストを書く）
+
+- まず失敗するテストを1つだけ書く
+- テストは具体的で、意図が明確なものにする
+- 実行して失敗することを確認（エラーメッセージを読む）
+
+### 2. Green（テストを通す）
+
+- テストを通すための最小限のコードを書く
+- 仮実装（Fake It）：まずは固定値を返す
+- 三角測量（Triangulation）：複数のテストケースから一般化
+- 明白な実装（Obvious Implementation）：自信がある場合のみ
+
+### 3. Refactor（リファクタリング）
+
+- すべてのテストが通っている状態を保つ（グリーンキープ）
+- 重複を除去し、設計を改善
+- 小さなステップで進める
+
+## テストピラミッド戦略
+
+このプロジェクトでは3層のテスト戦略を採用：
+
+### Unit Tests（単体テスト）
+
+- **対象**: 個別の関数・メソッド
+- **ツール**: pytest
+- **実行速度**: 高速（秒単位）
+- **カバレッジ**: 詳細なエッジケース
+
+### Integration Tests（統合テスト）
+
+- **対象**: API エンドポイント、コンポーネント間連携
+- **ツール**: pytest + httpx（ASGITransport使用）
+- **実行速度**: 中速（秒〜分単位）
+- **カバレッジ**: モジュール間の相互作用
+
+### E2E Tests（エンドツーエンドテスト）
+
+- **対象**: ユーザージャーニー全体（API + UI + ブラウザ）
+- **ツール**: Playwright MCP
+- **実行速度**: 低速（分単位）
+- **カバレッジ**: 実際のユーザー体験
+
+## TDD実践の重要原則
+
+### TODOリストの活用
+
+- 実装すべきテストケースをTODOリストとして管理
+- 1つずつ順番に実装（並行作業は避ける）
+- 完了したらリストから削除
+
+### テストの粒度
+
+- **1つのテストメソッドには1つのアサーション**（アサーションルーレットの回避）
+- 複数の検証が必要な場合は、テストを分割
+- エッジケースは別のテストメソッドとして記述
+
+### 実装の進め方
+
+1. **仮実装から始める**：最初は固定値を返す
+2. **三角測量で一般化**：複数のテストケースを追加
+3. **段階的に実装を進化**：一度に完璧を目指さない
+
+## テストの命名規則
+
+テスト名は**仕様書として読める**ようにする：
+
+- test_[対象]_[条件]_[期待結果]
+- 日本語も可：test_商品作成_正常データ_201を返す
+- 例: test_create_product_with_valid_data_returns_201
+- 例: test_create_product_with_empty_name_returns_400
+
+## テストの構造（AAA/Given-When-Then）
+
+```python
+def test_create_product_with_valid_data_returns_201():
+    # Arrange (Given): テストの準備
+    product_data = {"name": "テスト商品", "price": 1000}
+    
+    # Act (When): テスト対象の実行
+    response = client.post("/items", json=product_data)
+    
+    # Assert (Then): 結果の検証
+    assert response.status_code == 201
+```
+
+## インポート方法
+
+```python
+# 分離デプロイ構造でのテストインポート
+import sys
+from pathlib import Path
+
+# APIモジュールをパスに追加
+sys.path.insert(0, str(Path(__file__).parent.parent / "api"))
+
+# APIモジュールをインポート
+from main import app
+from models import ProductModel
+```
+
+## FastAPIテストの重要パターン
+
+### httpx + ASGITransportの使用（必須）
+
+**重要**: FastAPIテストでは、httpxのASGITransportを使用することが必須です。
+
+```python
+import pytest
+from httpx import ASGITransport, AsyncClient
+from api.main import app
+
+# 非同期テスト（推奨パターン）
+@pytest.mark.anyio
+async def test_endpoint():
+    """FastAPI + httpx の標準テストパターン"""
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test"
+    ) as client:
+        response = await client.get("/health")
+        assert response.status_code == 200
+        assert response.json() == {"status": "ok"}
+
+# fixtureを使う場合
+@pytest.fixture
+async def async_client():
+    """非同期テスト用のクライアントfixture"""
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test"
+    ) as client:
+        yield client
+
+@pytest.mark.anyio
+async def test_with_fixture(async_client):
+    """fixtureを使ったテスト"""
+    response = await async_client.get("/health")
+    assert response.status_code == 200
+```
+
+## テストの実行
+
+### Unit/Integration Tests
+
+uvを使用してテストを実行します（ローカルPython環境）：
+
+```bash
+# 全テストを実行
+uv run pytest tests/ -v
+
+# 特定のテストファイルを実行
+uv run pytest tests/test_basic.py -v
+
+# カバレッジ付きで実行
+uv run pytest tests/ --cov=api --cov-report=html
+
+# 特定のテスト関数のみ実行
+uv run pytest tests/test_basic.py::test_create_product -v
+```
+
+### E2E Tests (Playwright MCP)
+
+AI対話によるE2Eテストの実行：
+
+```bash
+# 前提条件: API + UIサーバーを並行起動
+# ターミナル1
+cd api && uv run uvicorn main:app --reload --port 8080
+
+# ターミナル2  
+cd ui && uv run streamlit run main.py --server.port 8501
+
+# ターミナル3: Cursorチャットで以下を実行
+# "Playwright MCPを使って、商品管理UIのE2Eテストを実行してください"
+```
+
+## pre-commitでの品質チェック
+
+**重要**: 現在のプロジェクトでは、pre-commitフックでコード品質のみがチェックされます（テストは手動実行）：
+
+```bash
+# コミット時の自動フロー
+git commit -m "..."
+# 1. uv-lock（依存関係更新）
+# 2. ruff-check --fix（コード修正）
+# 3. ruff-format（フォーマット）
+# 4. markdownlint（ドキュメント品質）
+
+# テストは開発者が手動で実行
+uv run --extra dev pytest  # グリーン確認後にコミット
+```
+
+## テスト環境のセットアップ（ローカルPython環境）
+
+### 重要: パッケージ配置ルール
+
+**httpxはdevグループに配置**: httpxはFastAPIのテストに使用するため、開発依存関係として管理
+
+```bash
+# 開発用依存関係の同期（pyproject.tomlから）
+uv sync --extra dev
+
+# 仮想環境を有効化
+source .venv/bin/activate  # macOS/Linux
+.venv\Scripts\activate     # Windows
+
+# 必要な場合のみ追加（通常は不要）
+# uv add --dev pytest pytest-cov httpx anyio
+```
+
+### パッケージ配置の原則
+
+- **dev依存関係**: pytest, httpx, anyio, trio, ruff, pyright等のテスト・開発ツール
+- **api依存関係**: fastapi, uvicorn, pydantic等の本番実行に必要なもののみ
+- **ui依存関係**: streamlit, pydantic等のUI実行に必要なもののみ
+
+## カバレッジ目標
+
+- 最低80%のカバレッジを維持
+- 重要なビジネスロジックは100%カバー
+
+## TDD実践例：商品作成APIの開発
+
+### Unit/Integration Tests（従来のTDD）
+
+#### ステップ1: 最初のテスト（Red）
+
+```python
+def test_create_product_returns_201():
+    """商品作成が成功すると201を返す"""
+    # このテストを書いた時点では、エンドポイントは存在しない
+    response = client.post("/items", json={"name": "商品", "price": 100})
+    assert response.status_code == 201  # 失敗する
+```
+
+#### ステップ2: 仮実装（Green）
+
+```python
+@app.post("/items", status_code=201)
+def create_item():
+    return {}  # 最小限の実装
+```
+
+#### ステップ3: 次のテスト（Red）
+
+```python
+def test_create_product_returns_created_product():
+    """作成した商品の情報を返す"""
+    response = client.post("/items", json={"name": "商品", "price": 100})
+    data = response.json()
+    assert data["name"] == "商品"  # 失敗する
+    assert data["price"] == 100     # 失敗する
+```
+
+#### ステップ4: 三角測量（Green）
+
+```python
+@app.post("/items", status_code=201)
+def create_item(item: dict):
+    return {"name": item["name"], "price": item["price"]}
+```
+
+#### ステップ5: リファクタリング
+
+```python
+from pydantic import BaseModel
+
+class Product(BaseModel):
+    name: str
+    price: float
+
+@app.post("/items", status_code=201)
+def create_item(item: Product) -> Product:
+    return item
+```
+
+### E2E Tests（Playwright MCP統合TDD）
+
+#### E2Eシナリオの定義（Red）
+
+```text
+# AI対話でのE2Eテストシナリオ策定
+ユーザージャーニー:
+1. ブラウザでStreamlitアプリを開く（http://localhost:8501）
+2. 商品名「テスト商品」、価格「999」を入力
+3. 「商品を登録」ボタンをクリック
+4. 登録成功メッセージの確認
+5. 商品一覧に新しい商品が表示されることを確認
+```
+
+#### UI実装でE2E通す（Green）
+
+```text
+# AI対話でのStreamlit実装指示
+上記のE2Eテストシナリオを通すStreamlitアプリを実装してください。
+APIエンドポイント（http://localhost:8080）との連携を含めて。
+```
+
+#### UX改善（Refactor）
+
+```text
+# AI対話でのUI改善指示
+E2Eテストは通っているので、以下のUX改善を行ってください：
+- エラーハンドリングの追加
+- ローディング表示の実装
+- レスポンシブデザインの調整
+```
+
+## 禁止事項
+
+### TDDで絶対にやってはいけないこと
+
+1. **テストなしで実装コードを書く**
+2. **複数のテストを一度に書く**
+3. **失敗を確認せずに次に進む**
+4. **リファクタリング中にテストを変更する**
+5. **1つのテストメソッドに複数のアサーションを書く**
+
+### アンチパターン
+
+```python
+# ❌ 悪い例：アサーションルーレット
+def test_create_product():
+    response = client.post("/items", json={"name": "商品", "price": 100})
+    assert response.status_code == 201
+    assert response.json()["name"] == "商品"
+    assert response.json()["price"] == 100
+    assert "id" in response.json()
+    assert "created_at" in response.json()
+
+# ✅ 良い例：テストを分割
+def test_create_product_returns_201():
+    response = client.post("/items", json={"name": "商品", "price": 100})
+    assert response.status_code == 201
+
+def test_create_product_returns_name():
+    response = client.post("/items", json={"name": "商品", "price": 100})
+    assert response.json()["name"] == "商品"
+
+def test_create_product_returns_price():
+    response = client.post("/items", json={"name": "商品", "price": 100})
+    assert response.json()["price"] == 100
+```
